@@ -1,24 +1,19 @@
-import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
+import { LoginLayout } from "./components/layouts/LoginLayout"
+import "./style.css"
 
-document.querySelector('#app').innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Hello Vite!</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
-  </div>
-`
+// Renderizar el layout de login
+document.querySelector("#app").innerHTML = LoginLayout()
 
-setupCounter(document.querySelector('#counter'))
+// Event listener para el formulario
+document.getElementById("login-form")?.addEventListener("submit", (e) => {
+  e.preventDefault()
+
+  const formData = new FormData(e.target)
+  const data = {
+    username: formData.get("username"),
+    password: formData.get("password"),
+  }
+
+  console.log("Login data:", data)
+  // Aquí puedes agregar tu lógica de autenticación
+})
