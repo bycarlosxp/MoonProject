@@ -1,0 +1,20 @@
+/* Checkbox styles */
+.custom-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.custom-checkbox {
+    width: 1.125rem;
+    height: 1.125rem;
+    cursor: pointer;
+    accent-color: #3498db;
+}
+
+.custom-checkbox-label {
+    color: #2c3e50;
+    font-size: 0.875rem;
+    cursor: pointer;
+    user-select: none;
+}
