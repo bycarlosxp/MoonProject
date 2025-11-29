@@ -13,9 +13,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #1a252f;
     padding: 0 1rem;
-    color: white;
+    color: #232323;
+    background-color: #f5f5f5;
     font-size: 1.25rem;
     min-width: 3.5rem;
 }
@@ -23,7 +23,7 @@
 .custom-input-field {
     flex: 1;
     padding: 0.875rem 1rem;
-    background-color: #34495e;
+    background-color: #f5f5f5;
     color: white;
     border: none;
     outline: none;
@@ -36,9 +36,9 @@
 }
 
 .custom-input-field:focus {
-    background-color: #3d5a73;
+    background-color: #e6e3e3;
 }
 
 .custom-input-wrapper:focus-within {
-    border-color: #5dade2;
+    border-color: #6b5674;
 }

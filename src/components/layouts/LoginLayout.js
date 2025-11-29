@@ -2,8 +2,8 @@ import './Login.css'
 
 import { GenerateInput } from "../ui/Input"
 import { GenerateButton } from "../ui/Button"
-import { GenerateCheckbox } from "../ui/Checkbox"
-import { GenerateLink } from "../ui/Link"
+import { MainLoader } from '../ui/MainLoader'
+
 
 /**
  * Genera el layout de login completo
@@ -14,20 +14,34 @@ import { GenerateLink } from "../ui/Link"
 export const LoginLayout = () => {
   const emailInput = GenerateInput("ri-user-line", "Nombre de usuario", "username", "username", "username")
   const passwordInput = GenerateInput("ri-lock-line", "Contraseña", "password", "password", "password")
-  const loginButton = GenerateButton("Iniciar Sesion", "submit", "primary")
+  const loginButton = GenerateButton("Entrar", "submit", "primary")
+  const mainLoader = MainLoader()
 
+  document.addEventListener('DOMContentLoaded', () =>
+    {
+      const loader = document.querySelector('#main-loader')
+    
+      // Timeout para controlar la animacion
+    setTimeout(() => {
+        loader.classList.add('hidden-loader')
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 2000)
+      }, 500)
+    }
+  )
   return `
+    ${mainLoader}
     <div class="login-background">
       <div class="login-card-wrapper">
-        <!-- Avatar Circle -->
-        <div class="login-avatar-circle">
-          <div class="login-avatar-inner">
-            <i class="ri-user-line login-avatar-icon"></i>
-          </div>
+        <!-- Logo -->
+        <div class="flex justify-center mb-4 ">
+          <span class="text-5xl font-bold login-title">MoonProject</span>
         </div>
         
         <!-- Login Card -->
         <div class="login-form-card">
+        <span class="text-xl text-gray-500 font-medium block mb-6">Bienvenido de nuevo!</span>
           <form id="login-form">
             <!-- Email Input -->
             ${emailInput}
@@ -36,9 +50,11 @@ export const LoginLayout = () => {
             ${passwordInput}
             
             <!-- Remember & Forgot -->
-            
+             
             <!-- Login Button -->
             ${loginButton}
+
+           
           </form>
         </div>
       </div>

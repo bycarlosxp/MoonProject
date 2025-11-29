@@ -1,0 +1,36 @@
+
+ #main-loader {
+     position: fixed;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     z-index: 9999;
+     background-color: #6b5674;
+     transition: background-color 0.8s ease-in-out, visibility 0.8s step-end;
+ }
+
+
+ .loader-text {
+     font-size: 3rem;
+     font-weight: bold;
+     color: #ffffff;
+     opacity: 1;
+     transform: scale(1);
+     transition: all 0.8s ease-in-out;
+ }
+
+ #main-loader.hidden-loader {
+     background-color: transparent;
+     pointer-events: none;
+
+ }
+
+ #main-loader.hidden-loader .loader-text {
+     color: #6b5674;
+     transform: scale(0.8) translateY(-50px);
+     opacity: 0;
+ }

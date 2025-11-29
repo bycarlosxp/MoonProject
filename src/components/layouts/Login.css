@@ -1,53 +1,46 @@
-/* Login layout background gradient */
-.login-background {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-}
+ body {
+     margin: 0;
+     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+     background-color: #f0f2f5;
+ }
 
-.login-card-wrapper {
-    width: 100%;
-    max-width: 28rem;
-    background-color: rgba(200, 180, 210, 0.3);
-    padding: 2rem;
-    border-radius: 1rem;
-    backdrop-filter: blur(10px);
-}
+ .login-background {
+     min-height: 100vh;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     padding: 1rem;
+     opacity: 0;
+     animation: fadeInLogin 0.6s ease-out 1s forwards;
+ }
 
-.login-avatar-circle {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 2rem;
-}
+ @keyframes fadeInLogin {
+     to {
+         opacity: 1;
+     }
+ }
 
-.login-avatar-inner {
-    width: 7rem;
-    height: 7rem;
-    background-color: #1a3a52;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-}
+ .login-card-wrapper {
+     width: 100%;
+     max-width: 28rem;
+     padding: 3rem;
+     border-radius: 1.5rem;
+     background: rgba(255, 255, 255, 0.9);
+     backdrop-filter: blur(10px);
+     box-shadow: 0 20px 40px rgba(107, 86, 116, 0.15);
+     border: 1px solid rgba(255, 255, 255, 0.5);
+     transform: translateY(20px);
+     animation: slideUpCard 0.4s ease-out 1.2s forwards;
+ }
 
-.login-avatar-icon {
-    font-size: 3.5rem;
-    color: white;
-}
+ @keyframes slideUpCard {
+     to {
+         transform: translateY(0);
+     }
+ }
 
-.login-form-card {
-    background-color: rgba(200, 180, 210, 0.4);
-    border-radius: 1.5rem;
-    padding: 2rem;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-}
+ 
 
-.login-form-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-}
+ .login-title {
+     color: #6b5674;
+ }
