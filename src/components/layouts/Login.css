@@ -40,7 +40,15 @@
  }
 
  
-
+.logo {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #6b5674;
+    margin-bottom: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
  .login-title {
      color: #6b5674;
  }

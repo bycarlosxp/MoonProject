@@ -35,7 +35,8 @@ export const LoginLayout = () => {
     <div class="login-background">
       <div class="login-card-wrapper">
         <!-- Logo -->
-        <div class="flex justify-center mb-4 ">
+        <div class="flex items-center justify-center mb-4 ">
+          <i class="ri-moon-fill logo"></i>
           <span class="text-5xl font-bold login-title">MoonProject</span>
         </div>
         

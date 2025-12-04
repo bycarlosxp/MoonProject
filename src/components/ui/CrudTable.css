@@ -1,0 +1,163 @@
+/* Contenedor principal */
+.crud-container {
+    width: 100%;
+    background: white;
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    overflow: hidden;
+}
+
+.crud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.crud-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.crud-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* --- Estilos Mobile First (Vista de Tarjeta) --- */
+.table-wrapper {
+    padding: 1rem;
+}
+
+.crud-row {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    transition: transform 0.2s;
+}
+
+.crud-row:active {
+    transform: scale(0.98);
+}
+
+/* Ocultar encabezados de columna en mobile */
+.table-head {
+    display: none;
+}
+
+.cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+/* Truco CSS: Usamos el atributo data-label para mostrar el título en mobile */
+.cell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #95a5a6;
+    font-size: 0.85rem;
+}
+
+.cell-content {
+    text-align: right;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+/* Estilo de usuario (Avatar + Nombre) */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.user-avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b5674;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-paid { background-color: #d1fae5; color: #059669; }
+.status-pending { background-color: #fef3c7; color: #d97706; }
+.status-cancelled { background-color: #fee2e2; color: #dc2626; }
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #95a5a6;
+    font-size: 1.2rem;
+    padding: 0.2rem;
+    transition: color 0.2s;
+}
+
+.action-btn:hover { color: #6b5674; }
+
+/* --- Desktop View (Transformación a Tabla) --- */
+@media (min-width: 768px) {
+    .table-wrapper {
+        padding: 0;
+    }
+
+    .table-head {
+        display: grid;
+        grid-template-columns: 0.8fr 2fr 1.5fr 1fr 1fr 0.5fr; /* Definición de columnas */
+        padding: 1rem 1.5rem;
+        background-color: #f8f9fa;
+        color: #95a5a6;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .crud-row {
+        display: grid;
+        grid-template-columns: 0.8fr 2fr 1.5fr 1fr 1fr 0.5fr; /* Mismas columnas */
+        align-items: center;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+        border-radius: 0;
+        margin-bottom: 0;
+        padding: 1rem 1.5rem;
+        gap: 0;
+    }
+
+    .crud-row:hover {
+        background-color: #fafafa;
+    }
+
+    /* Ocultamos los labels de mobile */
+    .cell::before { display: none; }
+    .cell { display: block; }
+    
+    .cell-content, .user-info {
+        text-align: left;
+        justify-content: flex-start;
+    }
+}
