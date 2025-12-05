@@ -1,0 +1,120 @@
+/* --- Mobile Card Style --- */
+.product-card {
+    background: white;
+    padding: 1rem;
+    border-radius: 1rem;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid #f0f0f0;
+    transition: transform 0.1s;
+}
+
+.product-card:active {
+    transform: scale(0.98);
+}
+
+.product-icon {
+    width: 3rem;
+    height: 3rem;
+    background-color: #f3f0f5;
+    border-radius: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b5674;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.product-info {
+    flex: 1;
+}
+
+.product-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+    display: block;
+}
+
+.product-sku {
+    font-size: 0.75rem;
+    color: #95a5a6;
+    margin-top: 0.2rem;
+    display: block;
+}
+
+.product-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+}
+
+.product-price {
+    font-weight: 700;
+    color: #6b5674;
+    font-size: 1.1rem;
+}
+
+/* Stock Indicator */
+.stock-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    background: #eee;
+}
+.stock-high { background: #d1fae5; color: #059669; }
+.stock-low { background: #ffedd5; color: #c2410c; }
+.stock-out { background: #fee2e2; color: #b91c1c; }
+
+/* --- Desktop Table View --- */
+.products-table-header {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .product-card {
+        display: grid;
+        grid-template-columns: 0.5fr 2fr 1fr 1fr 1fr 0.5fr;
+        padding: 1rem 1.5rem;
+        border-radius: 0;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+        margin: 0;
+    }
+    
+    .product-card:hover {
+        background-color: #fafafa;
+    }
+
+    .products-table-header {
+        display: grid;
+        grid-template-columns: 0.5fr 2fr 1fr 1fr 1fr 0.5fr;
+        padding: 1rem 1.5rem;
+        background: #f8f9fa;
+        color: #95a5a6;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+    }
+
+    .product-meta {
+        text-align: left;
+        align-items: center;
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+    
+    .product-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1.2rem;
+    }
+}

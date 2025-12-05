@@ -41,7 +41,7 @@
 .search-input {
     border: none;
     outline: none;
-    width: 100%;
+    width: auto;
     font-size: 0.9rem;
 }
 
@@ -68,5 +68,59 @@
     /* En desktop ocultamos el bottom navbar */
     .mobile-nav-container {
         display: none;
+    }
+}
+
+/* Mobile Search & Filter Section */
+.mobile-controls {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.mobile-search-box {
+    flex: 1;
+    background: white;
+    border-radius: 0.8rem;
+    padding: 0.8rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.mobile-search-box:focus-within {
+    border-color: #6b5674;
+}
+
+.mobile-search-box input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.95rem;
+    color: #2c3e50;
+}
+
+.mobile-filter-btn {
+    background: white;
+    width: 3.5rem;
+    border-radius: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #6b5674;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    cursor: pointer;
+    border: none;
+}
+
+/* Desktop override */
+@media (min-width: 1024px) {
+    .mobile-controls {
+        display: none; /* Ocultamos la barra móvil en desktop porque ya está en el header */
     }
 }

@@ -1,0 +1,82 @@
+/* Overlay oscuro */
+.drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    backdrop-filter: blur(2px);
+}
+
+.drawer-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Drawer Container */
+.drawer-panel {
+    position: fixed;
+    background: white;
+    z-index: 1001;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Mobile: Bottom Sheet */
+.drawer-panel {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 85vh; /* Casi pantalla completa */
+    border-top-left-radius: 1.5rem;
+    border-top-right-radius: 1.5rem;
+    transform: translateY(100%);
+}
+
+.drawer-overlay.open .drawer-panel {
+    transform: translateY(0);
+}
+
+/* Drawer Header */
+.drawer-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.drawer-title { font-size: 1.25rem; font-weight: 700; color: #2c3e50; }
+.drawer-close { background: none; border: none; font-size: 1.5rem; color: #95a5a6; cursor: pointer; }
+
+/* Content */
+.drawer-content {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Desktop: Side Panel */
+@media (min-width: 1024px) {
+    .drawer-panel {
+        top: 0;
+        right: 0;
+        bottom: 0;
+        height: 100vh;
+        width: 450px; /* Ancho fijo */
+        border-radius: 0;
+        transform: translateX(100%);
+        border-left: 1px solid #eee;
+    }
+
+    .drawer-overlay.open .drawer-panel {
+        transform: translateX(0);
+    }
+}

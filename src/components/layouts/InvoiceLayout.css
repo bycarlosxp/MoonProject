@@ -141,3 +141,41 @@
         background: transparent;
     }
 }
+/* Toggle Switch Style */
+.type-toggle-container {
+    background: #e0e0e0;
+    padding: 0.3rem;
+    border-radius: 0.8rem;
+    display: flex;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.toggle-btn {
+    flex: 1;
+    padding: 0.6rem;
+    text-align: center;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    z-index: 2;
+    transition: color 0.3s;
+    border-radius: 0.6rem;
+}
+
+.toggle-btn.active {
+    color: #6b5674;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Modificador para modo Cotización */
+.quote-mode-active .big-amount-input {
+    color: #2980b9; /* Azul para cotizaciones */
+}
+.quote-mode-active .preview-panel {
+    background: linear-gradient(135deg, #2980b9 0%, #2c3e50 100%); /* Fondo azulado */
+}
