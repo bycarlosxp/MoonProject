@@ -1,6 +1,7 @@
 import './SideBar.css'
 
 export const Sidebar = (activeItem = 'invoices') => {
+    // Definición de los ítems del menú
     const menuItems = [
         { id: 'dashboard', icon: 'ri-home-4-line', label: 'Inicio' },
         { id: 'invoices', icon: 'ri-file-list-3-line', label: 'Facturas' },

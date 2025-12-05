@@ -1,7 +1,7 @@
 import { Sidebar } from '../ui/SideBar'
 import { Navbar } from '../ui/Navbar'
 import { GenerateButton } from '../ui/Button'
-import '../ui/CrudTable.css' // Reutilizamos estilos de tabla
+import '../ui/CrudTable.css'
 
 export const ClientsLayout = () => {
     const desktopSidebar = Sidebar('clients') 

@@ -5,7 +5,7 @@ import { ProductDrawer } from '../ui/ProductDrawer'
 import { GenerateButton } from '../ui/Button'
 
 export const ProductLayout = () => {
-    const desktopSidebar = Sidebar('products') // Necesitas agregar 'products' al array del Sidebar si quieres que se ilumine
+    const desktopSidebar = Sidebar('products')
     const mobileNavbar = `<div class="mobile-nav-container">${Navbar()}</div>`
     const productList = ProductList()
     const drawer = ProductDrawer()

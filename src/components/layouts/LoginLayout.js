@@ -20,8 +20,7 @@ export const LoginLayout = () => {
   document.addEventListener('DOMContentLoaded', () =>
     {
       const loader = document.querySelector('#main-loader')
-    
-      // Timeout para controlar la animacion
+  
     setTimeout(() => {
         loader.classList.add('hidden-loader')
         setTimeout(() => {

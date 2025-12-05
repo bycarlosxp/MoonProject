@@ -55,7 +55,7 @@ const setupListeners = (route, params) => {
   document.querySelectorAll(".sidebar-link").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.preventDefault();
-      const id = el.dataset.link; // Asegúrate de tener data-link en Sidebar.js
+      const id = el.dataset.link;
       if (id === "dashboard") window.navigateTo("home");
       if (id === "invoices") window.navigateTo("dashboard");
       if (id === "products") window.navigateTo("products");
@@ -127,7 +127,7 @@ const setupListeners = (route, params) => {
         setTimeout(() => {
           closeDrawer();
           btn.innerText = "Guardar Producto";
-          // Aquí actualizarías la lista visualmente
+          // Todo: Agregar lógica real de guardado
           alert("Producto agregado (Simulación)");
         }, 800);
       });
@@ -163,7 +163,7 @@ const setupListeners = (route, params) => {
       setQuoteMode();
     });
 
-    // Calculadora en vivo (Igual que antes)
+    // Calculadora en vivo
     const amountInput = document.getElementById("amount-trigger");
     amountInput?.addEventListener("input", (e) => {
       const val = parseFloat(e.target.value) || 0;
@@ -184,7 +184,7 @@ const setupListeners = (route, params) => {
       ?.addEventListener("click", () => {
         window.navigateTo("create", { mode: "invoice" });
       });
-    // Boton Cotización (Nuevo)
+    // Boton Cotización
     document
       .getElementById("home-create-quote")
       ?.addEventListener("click", () => {
@@ -194,8 +194,7 @@ const setupListeners = (route, params) => {
     // Filtro de Mes (Simulación)
     document.getElementById("month-filter")?.addEventListener("change", (e) => {
       console.log("Filtro cambiado a:", e.target.value);
-      // Aquí llamarías a tu API para recargar los datos del Home
-      // Animacion visual de 'recarga'
+      // Todo: Actualizar datos del dashboard basado en el filtro
       const grid = document.querySelector(".finance-grid");
       grid.style.opacity = "0.5";
       setTimeout(() => (grid.style.opacity = "1"), 300);
@@ -207,7 +206,7 @@ const setupListeners = (route, params) => {
     const searchInput = document.getElementById("mobile-search-input");
     searchInput?.addEventListener("keyup", (e) => {
       console.log("Buscando: " + e.target.value);
-      // Aquí iría la lógica real de filtrado del DOM
+      // Todo: Filtrar tabla basado en input
     });
   }
 };

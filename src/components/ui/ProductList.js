@@ -1,5 +1,6 @@
 import './ProductList.css'
 
+// Datos simulados de productos
 const mockProducts = [
     { id: 1, name: 'Diseño Web Básico', sku: 'SRV-001', price: 450.00, stock: 999, type: 'service' },
     { id: 2, name: 'Hosting Anual', sku: 'SRV-002', price: 120.00, stock: 999, type: 'service' },
@@ -8,6 +9,7 @@ const mockProducts = [
     { id: 5, name: 'Monitor 24"', sku: 'PRD-201', price: 180.00, stock: 0, type: 'product' },
 ]
 
+// Función para obtener el badge de stock
 const getStockBadge = (stock, type) => {
     if (type === 'service') return '<span class="stock-badge stock-high">Ilimitado</span>';
     if (stock === 0) return '<span class="stock-badge stock-out">Agotado</span>';
@@ -18,8 +20,11 @@ const getStockBadge = (stock, type) => {
 const getIcon = (type) => type === 'service' ? 'ri-service-line' : 'ri-box-3-line';
 
 export const ProductList = () => {
-    const rows = mockProducts.map(p => `
-        <div class="product-card">
+    const rows = mockProducts.map((p, index) => {
+        const delay = Math.min(index * 0.08, 1) + 's';
+        
+        return `
+        <div class="product-card animate-card-enter" style="animation-delay: ${delay}">
             <div class="product-icon">
                 <i class="${getIcon(p.type)}"></i>
             </div>
@@ -29,7 +34,6 @@ export const ProductList = () => {
                 <span class="product-sku">SKU: ${p.sku}</span>
             </div>
 
-            <!-- Estos divs se comportan diferente en grid desktop -->
             <div class="desktop-only-cell" style="display:none;">${p.type === 'service' ? 'Servicio' : 'Producto Fisico'}</div>
             
             <div class="product-meta">
@@ -38,7 +42,6 @@ export const ProductList = () => {
 
             <div class="desktop-only-cell" style="display:none;">${getStockBadge(p.stock, p.type)}</div>
 
-            <!-- Mobile Badge (visible solo mobile via CSS hacks o structure) -->
             <div class="mobile-only-badge" style="font-size:0.8rem; margin-top:0.2rem;">
                ${window.innerWidth < 1024 ? getStockBadge(p.stock, p.type) : ''} 
             </div>
@@ -47,7 +50,7 @@ export const ProductList = () => {
                 <button class="action-btn"><i class="ri-more-2-fill"></i></button>
             </div>
         </div>
-    `).join('')
+    `}).join('')
 
     return `
         <div style="background:white; border-radius:1rem; box-shadow:0 4px 15px rgba(0,0,0,0.02); overflow:hidden;">

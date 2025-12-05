@@ -19,6 +19,7 @@ export const InvoiceLayout = () => {
         { value: "USD", label: "USD - Dólar" },
         { value: "VES", label: "VES - Bolívar" }
     ])
+    
     const dateInput = GenerateInput("ri-calendar-line", "Vencimiento / Validez", "date", "duedate")
     const descriptionInput = GenerateInput("ri-file-text-line", "Descripción", "text", "description")
     

@@ -7,8 +7,7 @@ import { GenerateButton } from '../ui/Button'
 export const CrudLayout = () => {
     // Mobile Navbar
     const mobileNavbar = `<div class="mobile-nav-container">${Navbar()}</div>`
-    
-    // Sidebar Desktop (marcado como activo 'invoices')
+    // Desktop Sidebar
     const desktopSidebar = Sidebar('invoices')
     
     const crudTable = CrudTable()
