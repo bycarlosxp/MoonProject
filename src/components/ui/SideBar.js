@@ -6,7 +6,6 @@ export const Sidebar = (activeItem = 'invoices') => {
         { id: 'dashboard', icon: 'ri-home-4-line', label: 'Inicio' },
         { id: 'invoices', icon: 'ri-file-list-3-line', label: 'Facturas' },
         { id: 'clients', icon: 'ri-group-line', label: 'Clientes' },
-        { id: 'products', icon: 'ri-box-3-line', label: 'Productos' },
         { id: 'settings', icon: 'ri-settings-4-line', label: 'Configuración' },
     ]
 
