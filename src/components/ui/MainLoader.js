@@ -8,8 +8,6 @@ import './Loader.css'
 
 export const MainLoader = () => {
 
-
-
   return `
     <div id="main-loader">
 

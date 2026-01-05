@@ -7,6 +7,7 @@ import { ProductLayout } from "./components/layouts/ProductLayout";
 import { ClientsLayout } from "./components/layouts/ClientsLayout";
 
 const app = document.querySelector("#app");
+const sideBarLogout = document.querySelector('#sidebar-logout');
 let currentMode = "invoice";
 
 const routes = {
@@ -16,10 +17,83 @@ const routes = {
   create: InvoiceLayout,
   products: ProductLayout,
   clients: ClientsLayout,
+  logout: LoginLayout,
 };
 
 // Estado para navegación
 let isNavigating = false;
+
+
+const login = ()=>{
+  const loginForm = document.getElementById("login-form");
+
+    loginForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const btn = e.target.querySelector("button");
+      const originalText = btn.innerText;
+
+      // 1. Obtener datos del formulario
+      const formData = new FormData(loginForm);
+      // Nota: En tu LoginLayout el input se llama "username", pero la API espera "email"
+      const payload = {
+        email: formData.get("username"),
+        password: formData.get("password"),
+      };
+
+      // UI Feedback: Cargando
+      btn.innerText = "Autenticando...";
+      btn.disabled = true;
+      btn.style.opacity = "0.7";
+
+      try {
+        // 2. Petición al Backend
+        const response = await fetch("http://localhost:2020/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Error en credenciales");
+        }
+
+        // 3. Guardar en LocalStorage (Vital para la creación de facturas)
+        // Guardamos el ID suelto para fácil acceso
+        localStorage.setItem("userId", data.user.id);
+        // Guardamos el objeto usuario completo por si necesitamos el nombre
+        localStorage.setItem("userData", JSON.stringify(data.user));
+        // Guardamos el token para futuras peticiones protegidas
+        localStorage.setItem("authToken", data.token);
+
+        // UI Feedback: Éxito
+        btn.innerText = "¡Éxito!";
+        btn.style.backgroundColor = "#27ae60"; // Verde
+
+        // 4. Redirigir
+        setTimeout(() => {
+          window.navigateTo("home");
+        }, 500);
+      } catch (error) {
+        console.error(error);
+        // UI Feedback: Error
+        btn.innerText = "Error: Verifique datos";
+        btn.style.backgroundColor = "#e74c3c"; // Rojo
+
+        // Restaurar botón después de 2 segundos
+        setTimeout(() => {
+          btn.innerText = originalText;
+          btn.disabled = false;
+          btn.style.opacity = "1";
+          btn.style.backgroundColor = ""; // Volver al color original (clase CSS)
+        }, 2000);
+      }
+    });
+}
 
 window.navigateTo = (routeName, params = {}) => {
   if (isNavigating) return;
@@ -31,7 +105,7 @@ window.navigateTo = (routeName, params = {}) => {
     currentContent.style.opacity = "0";
     currentContent.style.transform = "scale(0.99)";
   }
-
+   
   setTimeout(async () => {
     app.innerHTML = await routes[routeName]();
 
@@ -60,6 +134,13 @@ const setupListeners = (route, params) => {
       if (id === "dashboard") window.navigateTo("dashboard");
       if (id === "products") window.navigateTo("products");
       if (id === "clients") window.navigateTo("clients");
+      if (id === "logout") {
+        // Limpiar LocalStorage
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userData");
+        window.navigateTo("logout");
+      }
     });
   });
   // Nav Items Mobile
@@ -133,75 +214,16 @@ const setupListeners = (route, params) => {
       });
   }
 
+  if(route === "logout") {
+    // remove loader
+    const loader = document.querySelector('#main-loader')
+    loader.style.display = 'none';
+    login()
+
+  }
+
   if (route === "login") {
-    const loginForm = document.getElementById("login-form");
-
-    loginForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const btn = e.target.querySelector("button");
-      const originalText = btn.innerText;
-
-      // 1. Obtener datos del formulario
-      const formData = new FormData(loginForm);
-      // Nota: En tu LoginLayout el input se llama "username", pero la API espera "email"
-      const payload = {
-        email: formData.get("username"),
-        password: formData.get("password"),
-      };
-
-      // UI Feedback: Cargando
-      btn.innerText = "Autenticando...";
-      btn.disabled = true;
-      btn.style.opacity = "0.7";
-
-      try {
-        // 2. Petición al Backend
-        const response = await fetch("http://localhost:2020/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Error en credenciales");
-        }
-
-        // 3. Guardar en LocalStorage (Vital para la creación de facturas)
-        // Guardamos el ID suelto para fácil acceso
-        localStorage.setItem("userId", data.user.id);
-        // Guardamos el objeto usuario completo por si necesitamos el nombre
-        localStorage.setItem("userData", JSON.stringify(data.user));
-        // Guardamos el token para futuras peticiones protegidas
-        localStorage.setItem("authToken", data.token);
-
-        // UI Feedback: Éxito
-        btn.innerText = "¡Éxito!";
-        btn.style.backgroundColor = "#27ae60"; // Verde
-
-        // 4. Redirigir
-        setTimeout(() => {
-          window.navigateTo("home");
-        }, 500);
-      } catch (error) {
-        console.error(error);
-        // UI Feedback: Error
-        btn.innerText = "Error: Verifique datos";
-        btn.style.backgroundColor = "#e74c3c"; // Rojo
-
-        // Restaurar botón después de 2 segundos
-        setTimeout(() => {
-          btn.innerText = originalText;
-          btn.disabled = false;
-          btn.style.opacity = "1";
-          btn.style.backgroundColor = ""; // Volver al color original (clase CSS)
-        }, 2000);
-      }
-    });
+    login()
   }
 
   if (route === "create") {
