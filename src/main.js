@@ -56,8 +56,8 @@ const setupListeners = (route, params) => {
     el.addEventListener("click", (e) => {
       e.preventDefault();
       const id = el.dataset.link;
-      if (id === "dashboard") window.navigateTo("home");
-      if (id === "invoices") window.navigateTo("dashboard");
+      if (id === "home") window.navigateTo("home");
+      if (id === "dashboard") window.navigateTo("dashboard");
       if (id === "products") window.navigateTo("products");
       if (id === "clients") window.navigateTo("clients");
     });
@@ -134,11 +134,73 @@ const setupListeners = (route, params) => {
   }
 
   if (route === "login") {
-    document.getElementById("login-form")?.addEventListener("submit", (e) => {
+    const loginForm = document.getElementById("login-form");
+
+    loginForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
+
       const btn = e.target.querySelector("button");
-      btn.innerText = "Iniciando...";
-      setTimeout(() => window.navigateTo("home"), 800); // Redirigir a Home al login
+      const originalText = btn.innerText;
+
+      // 1. Obtener datos del formulario
+      const formData = new FormData(loginForm);
+      // Nota: En tu LoginLayout el input se llama "username", pero la API espera "email"
+      const payload = {
+        email: formData.get("username"),
+        password: formData.get("password"),
+      };
+
+      // UI Feedback: Cargando
+      btn.innerText = "Autenticando...";
+      btn.disabled = true;
+      btn.style.opacity = "0.7";
+
+      try {
+        // 2. Petición al Backend
+        const response = await fetch("http://localhost:2020/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Error en credenciales");
+        }
+
+        // 3. Guardar en LocalStorage (Vital para la creación de facturas)
+        // Guardamos el ID suelto para fácil acceso
+        localStorage.setItem("userId", data.user.id);
+        // Guardamos el objeto usuario completo por si necesitamos el nombre
+        localStorage.setItem("userData", JSON.stringify(data.user));
+        // Guardamos el token para futuras peticiones protegidas
+        localStorage.setItem("authToken", data.token);
+
+        // UI Feedback: Éxito
+        btn.innerText = "¡Éxito!";
+        btn.style.backgroundColor = "#27ae60"; // Verde
+
+        // 4. Redirigir
+        setTimeout(() => {
+          window.navigateTo("home");
+        }, 500);
+      } catch (error) {
+        console.error(error);
+        // UI Feedback: Error
+        btn.innerText = "Error: Verifique datos";
+        btn.style.backgroundColor = "#e74c3c"; // Rojo
+
+        // Restaurar botón después de 2 segundos
+        setTimeout(() => {
+          btn.innerText = originalText;
+          btn.disabled = false;
+          btn.style.opacity = "1";
+          btn.style.backgroundColor = ""; // Volver al color original (clase CSS)
+        }, 2000);
+      }
     });
   }
 
@@ -319,11 +381,17 @@ const setupListeners = (route, params) => {
 
       // 1. Recopilar Datos Finales
       const { total, items } = calculateTotals();
+      const currentUserId = localStorage.getItem("userId");
 
+      if (!currentUserId) {
+        alert("Sesión expirada. Por favor inicie sesión nuevamente.");
+        window.navigateTo("login");
+        return;
+      }
       // Objeto Maestro (Para Webhook y lógica interna)
       const fullInvoiceObject = {
         client_id: parseInt(clientSelect.value),
-        created_by_user_id: 1, // HARDCODED: Deberías obtenerlo de localStorage o sesión
+        created_by_user_id: parseInt(currentUserId), // HARDCODED: Deberías obtenerlo de localStorage o sesión
         invoice_type: currentDocType, // 'FACTURA' o 'COTIZACION'
         invoice_status: "PENDIENTE",
         total_amount: total,
@@ -445,12 +513,47 @@ const setupListeners = (route, params) => {
   }
 
   // Lógica simple de búsqueda (Visual)
-  if (route === "dashboard") {
-    const searchInput = document.getElementById("mobile-search-input");
-    searchInput?.addEventListener("keyup", (e) => {
-      console.log("Buscando: " + e.target.value);
-      // Todo: Filtrar tabla basado en input
-    });
+ if (route === "dashboard") {
+    // Referencias a inputs de búsqueda
+    const inputs = [
+      document.getElementById("mobile-search-input"),
+      document.getElementById("desktop-search-input"),
+    ];
+
+    // Lógica de filtrado en vivo
+    const handleSearch = (e) => {
+      const term = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll(".crud-row");
+
+      rows.forEach((row) => {
+        // Obtenemos todo el texto visible de la fila (ID, Nombre Cliente, Estado, Fecha)
+        const textContent = row.innerText.toLowerCase();
+
+        // Si el término existe en el texto, mostramos, si no, ocultamos
+        if (textContent.includes(term)) {
+          // Restauramos el display según el tamaño de pantalla
+          // Nota: Si usas la clase md:grid de Tailwind en el HTML, 
+          // simplemente quitar 'none' permite que CSS tome el control
+           row.style.display = ""; 
+        } else {
+          row.style.display = "none";
+        }
+      });
+    };
+
+    // Listeners de búsqueda
+    inputs.forEach((input) => input?.addEventListener("keyup", handleSearch));
+
+    // Navegación a Crear Factura
+    const goToCreate = () => window.navigateTo("create");
+    
+    document
+      .getElementById("desktop-create-btn")
+      ?.addEventListener("click", goToCreate);
+      
+    document
+      .getElementById("mobile-create-btn")
+      ?.addEventListener("click", goToCreate);
   }
 
   if (route === "clients") {
@@ -607,48 +710,6 @@ const setupListeners = (route, params) => {
       input?.addEventListener("input", handleSearch)
     );
   }
-};
-
-const setInvoiceMode = () => {
-  currentMode = "invoice";
-  // Update Toggle UI
-  document.getElementById("btn-mode-invoice").classList.add("active");
-  document.getElementById("btn-mode-quote").classList.remove("active");
-
-  // Update Texts
-  document.getElementById("form-title").innerText = "Nueva Factura";
-  document.getElementById("form-subtitle").innerText =
-    "Documento fiscal válido";
-  document.getElementById("preview-badge").innerText = "FACTURA #DRAFT";
-
-  // Update Button Text
-  const btns = document.querySelectorAll(".custom-button-primary");
-  btns.forEach((b) => (b.innerText = "Emitir Factura"));
-
-  // Remove Quote Styles
-  document
-    .querySelector(".invoice-content")
-    .classList.remove("quote-mode-active");
-};
-
-const setQuoteMode = () => {
-  currentMode = "quote";
-  // Update Toggle UI
-  document.getElementById("btn-mode-quote").classList.add("active");
-  document.getElementById("btn-mode-invoice").classList.remove("active");
-
-  // Update Texts
-  document.getElementById("form-title").innerText = "Crear Cotización";
-  document.getElementById("form-subtitle").innerText =
-    "Presupuesto sin validez fiscal";
-  document.getElementById("preview-badge").innerText = "COTIZACIÓN";
-
-  // Update Button Text
-  const btns = document.querySelectorAll(".custom-button-primary");
-  btns.forEach((b) => (b.innerText = "Enviar Presupuesto"));
-
-  // Add Quote Styles (Changes color to Blue)
-  document.querySelector(".invoice-content").classList.add("quote-mode-active");
 };
 
 // Init

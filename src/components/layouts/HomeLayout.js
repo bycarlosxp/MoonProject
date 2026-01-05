@@ -4,7 +4,7 @@ import { Navbar } from '../ui/Navbar'
 
 export const HomeLayout = () => {
     const mobileNavbar = `<div class="mobile-nav-container">${Navbar()}</div>`
-    const desktopSidebar = Sidebar('dashboard')
+    const desktopSidebar = Sidebar('home')
 
     return `
     <div class="layout-wrapper">

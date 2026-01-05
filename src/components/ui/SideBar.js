@@ -1,10 +1,10 @@
 import './SideBar.css'
 
-export const Sidebar = (activeItem = 'invoices') => {
+export const Sidebar = (activeItem = 'home') => {
     // Definición de los ítems del menú
     const menuItems = [
-        { id: 'dashboard', icon: 'ri-home-4-line', label: 'Inicio' },
-        { id: 'invoices', icon: 'ri-file-list-3-line', label: 'Facturas' },
+        { id: 'home', icon: 'ri-home-4-line', label: 'Inicio' },
+        { id: 'dashboard', icon: 'ri-file-list-3-line', label: 'Facturas' },
         { id: 'clients', icon: 'ri-group-line', label: 'Clientes' },
         { id: 'settings', icon: 'ri-settings-4-line', label: 'Configuración' },
     ]

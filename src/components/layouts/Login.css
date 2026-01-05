@@ -39,7 +39,11 @@
      }
  }
 
- 
+#login-form input[type="text"],
+#login-form input[type="password"] {
+    color: #232323;
+}
+
 .logo {
     font-size: 3.5rem;
     font-weight: 800;

@@ -15,3 +15,20 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+
+.mobile-nav-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 50;
+    background-color: white;
+    border-top: 1px solid #e5e7eb; /* border-gray-200 */
+}
+
+@media (min-width: 768px) {
+    .mobile-nav-container {
+        display: none !important;
+    }
+}

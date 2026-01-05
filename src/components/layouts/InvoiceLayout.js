@@ -4,7 +4,7 @@ import { Sidebar } from "../ui/SideBar"
 import { Navbar } from "../ui/Navbar"
 
 export const InvoiceLayout = async () => { 
-    const desktopSidebar = Sidebar('invoices')
+    const desktopSidebar = Sidebar('dashboard')
     const mobileNavbar = `<div class="mobile-nav-container">${Navbar()}</div>`
 
     // --- Cargar Clientes Dinámicamente ---

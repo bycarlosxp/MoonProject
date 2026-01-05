@@ -42,7 +42,7 @@ export const LoginLayout = () => {
         <!-- Login Card -->
         <div class="login-form-card">
         <span class="text-xl text-gray-500 font-medium block mb-6">Bienvenido de nuevo!</span>
-          <form id="login-form">
+          <form id="login-form"">
             <!-- Email Input -->
             ${emailInput}
             
