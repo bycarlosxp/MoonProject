@@ -1,6 +1,6 @@
 import { Sidebar } from '../ui/SideBar'
 import { Navbar } from '../ui/Navbar'
-import { GenerateButton } from '../ui/Button'
+
 import '../ui/CrudTable.css'
 
 export const CrudLayout = async () => {
@@ -8,7 +8,9 @@ export const CrudLayout = async () => {
     const mobileNavbar = `<div class="mobile-nav-container">${Navbar()}</div>`
     
     // Botón para crear factura
-    const createBtn = GenerateButton("+ Nueva Factura", "button", "primary", "desktop-create-btn")
+    const createBtn = `<button id="desktop-create-btn" class="custom-button-primary bg-blue-600 text-white rounded-lg px-6 py-2.5 font-medium shadow-lg hover:bg-blue-700 transition-all active:scale-95 text-sm flex items-center gap-2">
+        <i class="ri-add-line"></i> Nueva Factura
+    </button>`
 
     let invoices = []
     let clients = []
@@ -132,7 +134,7 @@ export const CrudLayout = async () => {
                         <i class="ri-search-line text-gray-400 mr-2"></i>
                         <input id="desktop-search-input" type="text" placeholder="Buscar factura..." class="bg-transparent border-none outline-none text-sm text-gray-700 w-full placeholder-gray-400">
                     </div>
-                   <div class="hidden-mobile w-auto">${createBtn}</div>
+                   <div class="hidden-mobile w-auto" >${createBtn}</div>
                 </div>
             </div>
 

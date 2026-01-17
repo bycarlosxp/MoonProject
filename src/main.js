@@ -7,8 +7,6 @@ import { ProductLayout } from "./components/layouts/ProductLayout";
 import { ClientsLayout } from "./components/layouts/ClientsLayout";
 
 const app = document.querySelector("#app");
-const sideBarLogout = document.querySelector('#sidebar-logout');
-let currentMode = "invoice";
 
 const routes = {
   login: LoginLayout,
@@ -17,85 +15,13 @@ const routes = {
   create: InvoiceLayout,
   products: ProductLayout,
   clients: ClientsLayout,
-  logout: LoginLayout,
 };
 
 // Estado para navegación
 let isNavigating = false;
 
-
-const login = ()=>{
-  const loginForm = document.getElementById("login-form");
-
-    loginForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const btn = e.target.querySelector("button");
-      const originalText = btn.innerText;
-
-      // 1. Obtener datos del formulario
-      const formData = new FormData(loginForm);
-      // Nota: En tu LoginLayout el input se llama "username", pero la API espera "email"
-      const payload = {
-        email: formData.get("username"),
-        password: formData.get("password"),
-      };
-
-      // UI Feedback: Cargando
-      btn.innerText = "Autenticando...";
-      btn.disabled = true;
-      btn.style.opacity = "0.7";
-
-      try {
-        // 2. Petición al Backend
-        const response = await fetch("http://localhost:2020/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Error en credenciales");
-        }
-
-        // 3. Guardar en LocalStorage (Vital para la creación de facturas)
-        // Guardamos el ID suelto para fácil acceso
-        localStorage.setItem("userId", data.user.id);
-        // Guardamos el objeto usuario completo por si necesitamos el nombre
-        localStorage.setItem("userData", JSON.stringify(data.user));
-        // Guardamos el token para futuras peticiones protegidas
-        localStorage.setItem("authToken", data.token);
-
-        // UI Feedback: Éxito
-        btn.innerText = "¡Éxito!";
-        btn.style.backgroundColor = "#27ae60"; // Verde
-
-        // 4. Redirigir
-        setTimeout(() => {
-          window.navigateTo("home");
-        }, 500);
-      } catch (error) {
-        console.error(error);
-        // UI Feedback: Error
-        btn.innerText = "Error: Verifique datos";
-        btn.style.backgroundColor = "#e74c3c"; // Rojo
-
-        // Restaurar botón después de 2 segundos
-        setTimeout(() => {
-          btn.innerText = originalText;
-          btn.disabled = false;
-          btn.style.opacity = "1";
-          btn.style.backgroundColor = ""; // Volver al color original (clase CSS)
-        }, 2000);
-      }
-    });
-}
-
-window.navigateTo = (routeName, params = {}) => {
+// --- ROUTER PRINCIPAL ---
+window.navigateTo = async (routeName, params = {}) => {
   if (isNavigating) return;
   isNavigating = true;
 
@@ -105,9 +31,15 @@ window.navigateTo = (routeName, params = {}) => {
     currentContent.style.opacity = "0";
     currentContent.style.transform = "scale(0.99)";
   }
-   
+
   setTimeout(async () => {
-    app.innerHTML = await routes[routeName]();
+    try {
+      app.innerHTML = await routes[routeName]();
+    } catch (error) {
+      console.error("Error renderizando ruta:", error);
+      app.innerHTML = await routes.login();
+      routeName = 'login';
+    }
 
     if (routeName === "login") {
       app.style.alignItems = "center";
@@ -118,622 +50,517 @@ window.navigateTo = (routeName, params = {}) => {
     }
 
     app.style.opacity = "1";
+    
     setupListeners(routeName, params);
+    
     isNavigating = false;
   }, 200);
 };
 
+// --- ORQUESTADOR DE LISTENERS ---
 const setupListeners = (route, params) => {
-  // --- Global Nav Listeners ---
+  setupGlobalNavigation();
 
+  switch (route) {
+    case "login":
+      handleLoginLogic();
+      break;
+    case "create":
+      handleCreateInvoiceLogic(params);
+      break;
+    case "clients":
+      handleClientsLogic();
+      break;
+    case "dashboard":
+      handleDashboardLogic();
+      break;
+    case "home":
+      handleHomeLogic();
+      break;
+    case "products":
+      handleProductsLogic();
+      break;
+  }
+};
+
+// --- 1. NAVEGACIÓN GLOBAL ---
+const setupGlobalNavigation = () => {
   document.querySelectorAll(".sidebar-link").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.preventDefault();
-      const id = el.dataset.link;
-      if (id === "home") window.navigateTo("home");
-      if (id === "dashboard") window.navigateTo("dashboard");
-      if (id === "products") window.navigateTo("products");
-      if (id === "clients") window.navigateTo("clients");
-      if (id === "logout") {
-        // Limpiar LocalStorage
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userData");
-        window.navigateTo("logout");
+      // Si es botón de logout
+      if (el.innerText.includes("Cerrar Sesión") || el.querySelector('.ri-logout-box-line')) {
+        handleLogout();
+        return;
       }
+      
+      const id = el.dataset.link;
+      if (id) window.navigateTo(id);
     });
   });
-  // Nav Items Mobile
+
   document.querySelectorAll(".nav-item").forEach((link) => {
     link.addEventListener("click", (e) => {
       e.preventDefault();
       const text = link.innerText.trim();
-
-      // Mapeo de texto a rutas
       if (text === "Inicio") window.navigateTo("home");
       if (text === "Facts") window.navigateTo("dashboard");
-      if (text === "Prods") window.navigateTo("products"); // Nuevo
-      if (text === "Clientes") window.navigateTo("clients"); // Nuevo
+      if (text === "Prods") window.navigateTo("products");
+      if (text === "Clientes") window.navigateTo("clients");
     });
   });
 
-  // Create Buttons
   const handleCreate = (e) => {
     e.preventDefault();
     window.navigateTo("create");
   };
-  document
-    .getElementById("btn-create-invoice")
-    ?.addEventListener("click", handleCreate);
-  document
-    .getElementById("desktop-create-btn")
-    ?.addEventListener("click", handleCreate);
-  document
-    .getElementById("home-btn-create")
-    ?.addEventListener("click", handleCreate); // Botón en Home
+  document.getElementById("btn-create-invoice")?.addEventListener("click", handleCreate);
+  document.getElementById("home-btn-create")?.addEventListener("click", handleCreate);
+};
 
-  // --- Route Specific Logic ---
-
-  if (route === "products") {
-    const drawer = document.getElementById("product-drawer");
-    const openDrawer = () => drawer.classList.add("open");
-    const closeDrawer = () => drawer.classList.remove("open");
-
-    // Buttons to open drawer
-    document
-      .getElementById("desktop-add-prod")
-      ?.addEventListener("click", openDrawer);
-    document
-      .getElementById("mobile-add-prod")
-      ?.addEventListener("click", openDrawer);
-
-    // Close actions
-    document
-      .getElementById("close-drawer-btn")
-      ?.addEventListener("click", closeDrawer);
-
-    // Click outside to close
-    drawer.addEventListener("click", (e) => {
-      if (e.target === drawer) closeDrawer();
-    });
-
-    // Save Logic Mock
-    document
-      .getElementById("product-form")
-      ?.querySelector("button")
-      ?.addEventListener("click", (e) => {
-        e.preventDefault();
-        const btn = e.target;
-        btn.innerText = "Guardando...";
-        setTimeout(() => {
-          closeDrawer();
-          btn.innerText = "Guardar Producto";
-          // Todo: Agregar lógica real de guardado
-          alert("Producto agregado (Simulación)");
-        }, 800);
-      });
+// --- 2. LÓGICA DE LOGIN ---
+const handleLoginLogic = () => {
+  const loader = document.querySelector('#main-loader');
+  if (loader && !loader.classList.contains('hidden-loader')) {
+      setTimeout(() => { loader.style.display = 'none'; }, 500);
   }
 
-  if(route === "logout") {
-    // remove loader
-    const loader = document.querySelector('#main-loader')
-    loader.style.display = 'none';
-    login()
+  const loginForm = document.getElementById("login-form");
+  loginForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button");
+    const originalText = btn.innerText;
 
-  }
-
-  if (route === "login") {
-    login()
-  }
-
-  if (route === "create") {
-    // --- Referencias DOM ---
-    const itemsContainer = document.getElementById("items-container");
-    const btnAddItem = document.getElementById("btn-add-item");
-    const previewModal = document.getElementById("preview-modal");
-    const btnClosePreview = document.getElementById("btn-close-preview");
-    const btnEditMode = document.getElementById("btn-edit-mode");
-    const btnConfirm = document.getElementById("btn-confirm-invoice"); // El botón importante
-
-    // Referencias Inputs Header
-    const clientSelect = document.querySelector("select[name='client']");
-    const dateIssuedInput = document.querySelector("input[name='date_issued']");
-    const dateDueInput = document.querySelector("input[name='date_due']");
-
-    // Toggle Type
-    let currentDocType = "FACTURA"; // Estado local
-
-    // --- 1. GESTIÓN DE ÍTEMS ---
-    const createRow = () => {
-      const row = document.createElement("div");
-      row.className =
-        "grid grid-cols-12 gap-3 items-center item-row animate-fade-in mb-2";
-      row.innerHTML = `
-            <div class="col-span-6 md:col-span-5">
-                <input type="text" placeholder="Descripción..." class="item-desc w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all">
-            </div>
-            <div class="col-span-2 md:col-span-2">
-                <input type="number" min="1" value="1" class="item-qty w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm text-center outline-none focus:bg-white focus:ring-2 focus:ring-blue-100">
-            </div>
-            <div class="col-span-3 md:col-span-3">
-                <input type="number" min="0" step="0.01" placeholder="0.00" class="item-price w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm text-right outline-none focus:bg-white focus:ring-2 focus:ring-blue-100">
-            </div>
-            <div class="col-span-1 md:col-span-2 flex justify-center">
-                <button class="btn-remove-item text-gray-400 hover:text-red-500 p-2"><i class="ri-delete-bin-line"></i></button>
-            </div>
-        `;
-
-      // Listeners para recálculo
-      row
-        .querySelectorAll("input")
-        .forEach((i) => i.addEventListener("input", calculateTotals));
-      row.querySelector(".btn-remove-item").addEventListener("click", () => {
-        row.remove();
-        calculateTotals();
-      });
-      itemsContainer.appendChild(row);
+    const formData = new FormData(loginForm);
+    const payload = {
+      email: formData.get("username"),
+      password: formData.get("password"),
     };
 
-    const calculateTotals = () => {
-      let subtotal = 0;
-      const items = [];
+    btn.innerText = "Autenticando...";
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
 
-      document.querySelectorAll(".item-row").forEach((row) => {
-        const desc = row.querySelector(".item-desc").value;
-        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
-        const price = parseFloat(row.querySelector(".item-price").value) || 0;
-        const total = qty * price;
-
-        subtotal += total;
-
-        // Guardamos datos limpios de cada fila
-        if (desc && qty > 0) {
-          items.push({
-            description: desc,
-            quantity: qty,
-            unit_price: price,
-            total_row: total,
-          });
-        }
+    try {
+      const response = await fetch("http://localhost:2020/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      const tax = subtotal * 0.16;
-      const total = subtotal + tax;
+      const data = await response.json();
 
-      document.getElementById("form-subtotal").innerText = `$${subtotal.toFixed(
-        2
-      )}`;
-      document.getElementById("form-tax").innerText = `$${tax.toFixed(2)}`;
-      document.getElementById("form-total").innerText = `$${total.toFixed(2)}`;
+      if (!response.ok) throw new Error(data.message || "Error en credenciales");
 
-      return { subtotal, tax, total, items };
-    };
+      localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("userData", JSON.stringify(data.user));
+      localStorage.setItem("authToken", data.token);
 
-    // Iniciar con una fila vacía
-    createRow();
-    btnAddItem?.addEventListener("click", createRow);
+      btn.innerText = "¡Éxito!";
+      btn.style.backgroundColor = "#27ae60";
 
-    // --- 2. MODAL Y PREVISUALIZACIÓN ---
-    const openPreview = () => {
-      const { subtotal, tax, total, items } = calculateTotals();
+      setTimeout(() => window.navigateTo("home"), 500);
+    } catch (error) {
+      console.error(error);
+      btn.innerText = "Error: Verifique datos";
+      btn.style.backgroundColor = "#e74c3c";
+      setTimeout(() => {
+        btn.innerText = originalText;
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.style.backgroundColor = "";
+      }, 2000);
+    }
+  });
+};
 
-      // Validar selección de cliente
-      if (!clientSelect.value) {
-        alert("Por favor selecciona un cliente");
-        return;
-      }
+const handleLogout = () => {
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("userData");
+  window.navigateTo("login");
+};
 
-      const clientName = clientSelect.options[clientSelect.selectedIndex].text;
+// --- 3. LÓGICA DE CREAR FACTURA (COMPLETA) ---
+const handleCreateInvoiceLogic = (params) => {
+  // Referencias DOM
+  const itemsContainer = document.getElementById("items-container");
+  const btnAddItem = document.getElementById("btn-add-item");
+  const previewModal = document.getElementById("preview-modal");
+  const btnClosePreview = document.getElementById("btn-close-preview");
+  const btnEditMode = document.getElementById("btn-edit-mode");
+  const btnConfirm = document.getElementById("btn-confirm-invoice");
+  const previewBackdrop = document.getElementById("preview-backdrop");
+  
+  const clientSelect = document.querySelector("select[name='client']");
+  const dateIssuedInput = document.querySelector("input[name='date_issued']");
+  const dateDueInput = document.querySelector("input[name='date_due']");
+  const taxToggle = document.getElementById("tax-toggle");
 
-      // Rellenar Papel
-      document.getElementById("paper-type").innerText = currentDocType;
-      document.getElementById("paper-client").innerText = clientName;
-      document.getElementById(
-        "paper-date"
-      ).innerText = `Fecha: ${dateIssuedInput.value}`;
-      document.getElementById("paper-due").innerText = dateDueInput.value;
+  const btnInvoice = document.getElementById("btn-mode-invoice");
+  const btnQuote = document.getElementById("btn-mode-quote");
 
-      // Renderizar Tabla Papel
-      const tbody = document.getElementById("paper-items-body");
-      tbody.innerHTML = items
-        .map(
-          (item) => `
-            <tr>
-                <td class="py-2 text-gray-800 border-b border-gray-50">${
-                  item.description
-                }</td>
-                <td class="py-2 text-right text-gray-600 border-b border-gray-50">${
-                  item.quantity
-                }</td>
-                <td class="py-2 text-right text-gray-600 border-b border-gray-50">$${item.unit_price.toFixed(
-                  2
-                )}</td>
-                <td class="py-2 text-right font-medium text-gray-800 border-b border-gray-50">$${item.total_row.toFixed(
-                  2
-                )}</td>
-            </tr>
-        `
-        )
-        .join("");
+  // Estado Local
+  let currentDocType = params && params.mode === 'quote' ? "COTIZACION" : "FACTURA";
 
-      // Totales Papel
-      document.getElementById(
-        "paper-subtotal"
-      ).innerText = `$${subtotal.toFixed(2)}`;
-      document.getElementById("paper-tax").innerText = `$${tax.toFixed(2)}`;
-      document.getElementById(
-        "paper-total-bottom"
-      ).innerText = `$${total.toFixed(2)}`;
-      document.getElementById("paper-total-top").innerText = `$${total.toFixed(
-        2
-      )}`;
+  // --- DEFINICIÓN DE FUNCIONES INTERNAS ---
 
-      // Mostrar Modal
-      previewModal.classList.remove("opacity-0", "pointer-events-none");
-      previewModal
-        .querySelector("#preview-content")
-        .classList.remove("scale-95");
-      previewModal.querySelector("#preview-content").classList.add("scale-100");
-    };
+  const updateDocTypeUI = (type) => {
+      currentDocType = type;
+      const activeClass = ["bg-white", "text-blue-600", "shadow-sm"];
+      const inactiveClass = ["text-gray-500"];
 
-    const closePreview = () => {
-      previewModal.classList.add("opacity-0", "pointer-events-none");
-      previewModal.querySelector("#preview-content").classList.add("scale-95");
-      previewModal
-        .querySelector("#preview-content")
-        .classList.remove("scale-100");
-    };
-
-    document
-      .getElementById("btn-open-preview")
-      ?.addEventListener("click", openPreview);
-    document
-      .getElementById("btn-mobile-preview")
-      ?.addEventListener("click", openPreview);
-    btnClosePreview?.addEventListener("click", closePreview);
-    btnEditMode?.addEventListener("click", closePreview);
-    document
-      .getElementById("preview-backdrop")
-      ?.addEventListener("click", closePreview);
-
-    // --- 3. LÓGICA DE GUARDADO (DB + WEBHOOK) ---
-    btnConfirm?.addEventListener("click", async () => {
-      const btnText = document.getElementById("btn-text-confirm");
-      const originalText = btnText.innerText;
-
-      // 1. Recopilar Datos Finales
-      const { total, items } = calculateTotals();
-      const currentUserId = localStorage.getItem("userId");
-
-      if (!currentUserId) {
-        alert("Sesión expirada. Por favor inicie sesión nuevamente.");
-        window.navigateTo("login");
-        return;
-      }
-      // Objeto Maestro (Para Webhook y lógica interna)
-      const fullInvoiceObject = {
-        client_id: parseInt(clientSelect.value),
-        created_by_user_id: parseInt(currentUserId), // HARDCODED: Deberías obtenerlo de localStorage o sesión
-        invoice_type: currentDocType, // 'FACTURA' o 'COTIZACION'
-        invoice_status: "PENDIENTE",
-        total_amount: total,
-        created_at: new Date().toISOString(), // Para el webhook
-        items: items, // Array con detalles
-      };
-
-      console.log("Datos listos para enviar:", fullInvoiceObject);
-
-      try {
-        btnText.innerText = "Procesando...";
-        btnConfirm.disabled = true;
-
-        // A. ENVIAR CABECERA (Tabla `invoice`)
-        const invoiceResponse = await fetch(
-          "http://localhost:3000/api/invoices",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              client_id: fullInvoiceObject.client_id,
-              created_by_user_id: fullInvoiceObject.created_by_user_id,
-              invoice_type: fullInvoiceObject.invoice_type,
-              invoice_status: fullInvoiceObject.invoice_status,
-              total_amount: fullInvoiceObject.total_amount,
-            }),
-          }
-        );
-
-        if (!invoiceResponse.ok)
-          throw new Error("Error creando factura cabecera");
-
-        const invoiceResult = await invoiceResponse.json();
-        const newInvoiceId = invoiceResult.id; // El ID generado por MySQL
-        console.log("Factura creada ID:", newInvoiceId);
-
-        // B. ENVIAR DETALLES (Tabla `invoice_details`)
-        // Iteramos sobre los items y los enviamos uno por uno (o en lote si tu API lo soporta)
-        for (const item of items) {
-          await fetch("http://localhost:3000/api/invoice_details", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              invoice_id: newInvoiceId,
-              description: item.description, // <--- CAMBIO CLAVE: Texto libre
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-            }),
-          });
-        }
-
-        // C. ENVIAR A WEBHOOK (Con toda la data junta + el ID nuevo)
-        fullInvoiceObject.invoice_id = newInvoiceId; // Agregamos el ID real
-
-        // Simulación de Webhook (Descomenta y pon tu URL)
-        /*
-            await fetch('https://tu-webhook-url.com', {
-                method: 'POST',
-                body: JSON.stringify(fullInvoiceObject)
-            });
-            */
-
-        alert(`Documento ${newInvoiceId} creado exitosamente`);
-        window.navigateTo("dashboard"); // Redirigir al listado
-      } catch (error) {
-        console.error(error);
-        alert("Error al procesar el documento: " + error.message);
-      } finally {
-        btnText.innerText = originalText;
-        btnConfirm.disabled = false;
-      }
-    });
-
-    // --- 4. TOGGLE TIPO DOCUMENTO ---
-    const btnInvoice = document.getElementById("btn-mode-invoice");
-    const btnQuote = document.getElementById("btn-mode-quote");
-
-    const setMode = (mode) => {
-      if (mode === "invoice") {
-        currentDocType = "FACTURA";
-        btnInvoice.classList.add("bg-white", "text-blue-600", "shadow-sm");
-        btnInvoice.classList.remove("text-gray-500");
-        btnQuote.classList.remove("bg-white", "text-blue-600", "shadow-sm");
-        btnQuote.classList.add("text-gray-500");
+      if (type === "FACTURA") {
+          btnInvoice?.classList.add(...activeClass);
+          btnInvoice?.classList.remove(...inactiveClass);
+          btnQuote?.classList.remove(...activeClass);
+          btnQuote?.classList.add(...inactiveClass);
       } else {
-        currentDocType = "COTIZACION"; // O 'QUOTE' según tu Enum en BD
-        btnQuote.classList.add("bg-white", "text-blue-600", "shadow-sm");
-        btnQuote.classList.remove("text-gray-500");
-        btnInvoice.classList.remove("bg-white", "text-blue-600", "shadow-sm");
-        btnInvoice.classList.add("text-gray-500");
+          btnQuote?.classList.add(...activeClass);
+          btnQuote?.classList.remove(...inactiveClass);
+          btnInvoice?.classList.remove(...activeClass);
+          btnInvoice?.classList.add(...inactiveClass);
       }
-    };
+  };
 
-    btnInvoice?.addEventListener("click", () => setMode("invoice"));
-    btnQuote?.addEventListener("click", () => setMode("quote"));
-  }
-  if (route === "home") {
-    // Boton Factura
-    document
-      .getElementById("home-create-inv")
-      ?.addEventListener("click", () => {
-        window.navigateTo("create", { mode: "invoice" });
-      });
-    // Boton Cotización
-    document
-      .getElementById("home-create-quote")
-      ?.addEventListener("click", () => {
-        window.navigateTo("create", { mode: "quote" });
-      });
+  const calculateTotals = () => {
+    let subtotal = 0;
+    const items = [];
 
-    // Filtro de Mes (Simulación)
-    document.getElementById("month-filter")?.addEventListener("change", (e) => {
-      console.log("Filtro cambiado a:", e.target.value);
-      // Todo: Actualizar datos del dashboard basado en el filtro
-      const grid = document.querySelector(".finance-grid");
-      grid.style.opacity = "0.5";
-      setTimeout(() => (grid.style.opacity = "1"), 300);
-    });
-  }
-
-  // Lógica simple de búsqueda (Visual)
- if (route === "dashboard") {
-    // Referencias a inputs de búsqueda
-    const inputs = [
-      document.getElementById("mobile-search-input"),
-      document.getElementById("desktop-search-input"),
-    ];
-
-    // Lógica de filtrado en vivo
-    const handleSearch = (e) => {
-      const term = e.target.value.toLowerCase();
-      const rows = document.querySelectorAll(".crud-row");
-
-      rows.forEach((row) => {
-        // Obtenemos todo el texto visible de la fila (ID, Nombre Cliente, Estado, Fecha)
-        const textContent = row.innerText.toLowerCase();
-
-        // Si el término existe en el texto, mostramos, si no, ocultamos
-        if (textContent.includes(term)) {
-          // Restauramos el display según el tamaño de pantalla
-          // Nota: Si usas la clase md:grid de Tailwind en el HTML, 
-          // simplemente quitar 'none' permite que CSS tome el control
-           row.style.display = ""; 
-        } else {
-          row.style.display = "none";
-        }
-      });
-    };
-
-    // Listeners de búsqueda
-    inputs.forEach((input) => input?.addEventListener("keyup", handleSearch));
-
-    // Navegación a Crear Factura
-    const goToCreate = () => window.navigateTo("create");
-    
-    document
-      .getElementById("desktop-create-btn")
-      ?.addEventListener("click", goToCreate);
+    document.querySelectorAll(".item-row").forEach((row) => {
+      const desc = row.querySelector(".item-desc").value;
+      const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+      const price = parseFloat(row.querySelector(".item-price").value) || 0;
+      const totalRow = qty * price;
       
-    document
-      .getElementById("mobile-create-btn")
-      ?.addEventListener("click", goToCreate);
-  }
+      subtotal += totalRow;
 
-  if (route === "clients") {
+      if (desc && qty > 0) {
+        items.push({ description: desc, quantity: qty, unit_price: price, total_row: totalRow });
+      }
+    });
+
+    const applyTax = taxToggle?.checked ?? false;
+    const tax = applyTax ? subtotal * 0.16 : 0;
+    const total = subtotal + tax;
+
+    document.getElementById("form-subtotal").innerText = `$${subtotal.toFixed(2)}`;
+    document.getElementById("form-tax").innerText = `$${tax.toFixed(2)}`;
+    document.getElementById("form-total").innerText = `$${total.toFixed(2)}`;
+
+    return { subtotal, tax, total, items, applyTax };
+  };
+
+  const createRow = () => {
+    const row = document.createElement("div");
+    row.className = "grid grid-cols-12 gap-3 items-center item-row animate-fade-in mb-2";
+    row.innerHTML = `
+        <div class="col-span-6 md:col-span-5"><input type="text" placeholder="Descripción..." class="item-desc w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"></div>
+        <div class="col-span-2 md:col-span-2"><input type="number" min="1" value="1" class="item-qty w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm text-center outline-none focus:bg-white focus:ring-2 focus:ring-blue-100"></div>
+        <div class="col-span-3 md:col-span-3"><input type="number" min="0" step="0.01" placeholder="0.00" class="item-price w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm text-right outline-none focus:bg-white focus:ring-2 focus:ring-blue-100"></div>
+        <div class="col-span-1 md:col-span-2 flex justify-center"><button class="btn-remove-item text-gray-400 hover:text-red-500 p-2 transition-colors"><i class="ri-delete-bin-line"></i></button></div>
+    `;
+
+    row.querySelectorAll("input").forEach((i) => i.addEventListener("input", calculateTotals));
+    row.querySelector(".btn-remove-item").addEventListener("click", () => {
+      row.remove();
+      calculateTotals();
+    });
+
+    itemsContainer.appendChild(row);
+  };
+
+  const openPreview = () => {
+    const { subtotal, tax, total, items } = calculateTotals();
+    
+    if (!clientSelect.value) return alert("Por favor selecciona un cliente.");
+    if (!dateIssuedInput.value) return alert("La fecha de emisión es obligatoria.");
+
+    // Formato de fechas
+    const [yIssue, mIssue, dIssue] = dateIssuedInput.value.split('-').map(Number);
+    const issueDateObj = new Date(yIssue, mIssue - 1, dIssue);
+    const [yDue, mDue, dDue] = dateDueInput.value.split('-').map(Number);
+    const dueDateObj = new Date(yDue, mDue - 1, dDue);
+    const dateOpts = { year: 'numeric', month: 'long', day: 'numeric' };
+
+    document.getElementById("paper-type").innerText = currentDocType;
+    document.getElementById("paper-client").innerText = clientSelect.options[clientSelect.selectedIndex].text;
+    document.getElementById("paper-date").innerText = issueDateObj.toLocaleDateString('es-ES', dateOpts);
+    document.getElementById("paper-due").innerText = dueDateObj.toLocaleDateString('es-ES', dateOpts);
+
+    const tbody = document.getElementById("paper-items-body");
+    if(items.length === 0){
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-400">Sin ítems</td></tr>`;
+    } else {
+        tbody.innerHTML = items.map(item => `
+            <tr>
+                <td class="py-2 text-gray-800 border-b border-gray-50">${item.description}</td>
+                <td class="py-2 text-right text-gray-600 border-b border-gray-50">${item.quantity}</td>
+                <td class="py-2 text-right text-gray-600 border-b border-gray-50">$${item.unit_price.toFixed(2)}</td>
+                <td class="py-2 text-right font-medium text-gray-800 border-b border-gray-50">$${item.total_row.toFixed(2)}</td>
+            </tr>
+        `).join("");
+    }
+
+    document.getElementById("paper-subtotal").innerText = `$${subtotal.toFixed(2)}`;
+    
+    const paperTaxRow = document.getElementById("paper-tax-row");
+    if(paperTaxRow) {
+        if (tax > 0) {
+            paperTaxRow.style.display = "flex";
+            document.getElementById("paper-tax").innerText = `$${tax.toFixed(2)}`;
+        } else {
+            paperTaxRow.style.display = "none";
+        }
+    }
+
+    document.getElementById("paper-total-bottom").innerText = `$${total.toFixed(2)}`;
+    
+    // Verificamos si existe el elemento antes de escribir (Corrección del error anterior)
+    const totalTop = document.getElementById("paper-total-top");
+    if (totalTop) totalTop.innerText = `$${total.toFixed(2)}`;
+
+    previewModal.classList.remove("opacity-0", "pointer-events-none");
+    previewModal.querySelector("#preview-content").classList.remove("scale-95");
+    previewModal.querySelector("#preview-content").classList.add("scale-100");
+  };
+
+  const closePreview = () => {
+    previewModal.classList.add("opacity-0", "pointer-events-none");
+    previewModal.querySelector("#preview-content").classList.add("scale-95");
+    previewModal.querySelector("#preview-content").classList.remove("scale-100");
+  };
+
+  // --- EJECUCIÓN INICIAL ---
+  updateDocTypeUI(currentDocType);
+  createRow();
+
+  // Listeners
+  btnAddItem?.addEventListener("click", createRow);
+  taxToggle?.addEventListener("change", calculateTotals);
+  btnInvoice?.addEventListener("click", (e) => { e.preventDefault(); updateDocTypeUI("FACTURA"); });
+  btnQuote?.addEventListener("click", (e) => { e.preventDefault(); updateDocTypeUI("COTIZACION"); });
+
+  document.getElementById("btn-open-preview")?.addEventListener("click", openPreview);
+  document.getElementById("btn-mobile-preview")?.addEventListener("click", openPreview);
+  btnClosePreview?.addEventListener("click", closePreview);
+  btnEditMode?.addEventListener("click", closePreview);
+  previewBackdrop?.addEventListener("click", closePreview);
+
+  // --- SUBMIT (Guardado en 2 Pasos) ---
+  btnConfirm?.addEventListener("click", async () => {
+    const btnText = document.getElementById("btn-text-confirm");
+    const originalText = btnText.innerText;
+    
+    const currentUserId = localStorage.getItem("userId");
+    if (!currentUserId) {
+        alert("Tu sesión ha expirado.");
+        return handleLogout();
+    }
+
+    const { total, items } = calculateTotals();
+    const fullInvoiceObject = {
+      client_id: parseInt(clientSelect.value),
+      created_by_user_id: parseInt(currentUserId),
+      invoice_type: currentDocType,
+      invoice_status: "PENDIENTE",
+      total_amount: total,
+      invoice_date: dateIssuedInput.value, 
+      due_date: dateDueInput.value,
+      items: items,
+    };
+
+    try {
+      btnText.innerText = "Procesando...";
+      btnConfirm.disabled = true;
+
+      // 1. Crear Cabecera
+      const resInvoice = await fetch("http://localhost:3000/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: fullInvoiceObject.client_id,
+          created_by_user_id: fullInvoiceObject.created_by_user_id,
+          invoice_type: fullInvoiceObject.invoice_type,
+          invoice_status: fullInvoiceObject.invoice_status,
+          total_amount: fullInvoiceObject.total_amount,
+          invoice_date: fullInvoiceObject.invoice_date,
+          due_date: fullInvoiceObject.due_date
+        }),
+      });
+
+      if (!resInvoice.ok) throw new Error("Error al crear la cabecera.");
+      
+      const responseData = await resInvoice.json();
+      const newInvoiceId = responseData.id;
+
+      // 2. Crear Detalles
+      for (const item of items) {
+        await fetch("http://localhost:3000/api/invoice_details", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            invoice_id: newInvoiceId,
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+          }),
+        });
+      }
+
+      // 3. Webhook
+      fullInvoiceObject.invoice_id = newInvoiceId;
+      await fetch('https://n8n.srv1278121.hstgr.cloud/webhook-test/b0df5e30-0447-444a-bcfc-d05c78750870', {
+        method: 'POST',
+        body: JSON.stringify(fullInvoiceObject)
+      }).catch(e => console.warn(e));
+
+      alert(`${currentDocType} #${newInvoiceId} creada exitosamente.`);
+      window.navigateTo("dashboard");
+
+    } catch (error) {
+      console.error(error);
+      alert("Error: " + error.message);
+    } finally {
+      btnText.innerText = originalText;
+      btnConfirm.disabled = false;
+    }
+  });
+};
+
+// --- 4. LÓGICA DE CLIENTES ---
+const handleClientsLogic = () => {
     const modal = document.getElementById("client-modal");
     const modalContent = document.getElementById("modal-content");
     const form = document.getElementById("client-form");
     const modalTitle = document.getElementById("modal-title");
     const btnSave = document.getElementById("btn-save-client");
+    const searchInputs = [document.getElementById("client-search-desktop"), document.getElementById("client-search-mobile")];
 
-    // Inputs de búsqueda (Desktop y Mobile)
-    const searchInputs = [
-      document.getElementById("client-search-desktop"),
-      document.getElementById("client-search-mobile"),
-    ];
-
-    // Funciones del Modal
     const openModal = (isEdit = false) => {
-      modal.classList.add("modal-open");
-      modalContent.classList.add("modal-content-open");
-      if (!isEdit) {
-        form.reset();
-        document.getElementById("client-id-field").value = ""; // Limpiar ID
-        modalTitle.innerText = "Nuevo Cliente";
-        btnSave.innerHTML = "<span>Guardar Cliente</span>";
-      }
+        modal.classList.add("modal-open");
+        modalContent.classList.add("modal-content-open");
+        if (!isEdit) {
+            form.reset();
+            document.getElementById("client-id-field").value = "";
+            modalTitle.innerText = "Nuevo Cliente";
+            btnSave.innerHTML = "<span>Guardar Cliente</span>";
+        }
     };
 
     const closeModal = () => {
-      modal.classList.remove("modal-open");
-      modalContent.classList.remove("modal-content-open");
-      setTimeout(() => {
-        form.reset();
-        document.getElementById("client-id-field").value = "";
-      }, 300); // Esperar animación
+        modal.classList.remove("modal-open");
+        modalContent.classList.remove("modal-content-open");
+        setTimeout(() => { form.reset(); }, 300);
     };
 
-    // Listeners Apertura/Cierre
-    document
-      .getElementById("btn-open-modal")
-      ?.addEventListener("click", () => openModal(false));
-    document
-      .getElementById("mobile-add-btn")
-      ?.addEventListener("click", () => openModal(false));
-    document
-      .getElementById("btn-close-modal")
-      ?.addEventListener("click", closeModal);
-    document
-      .getElementById("btn-cancel-modal")
-      ?.addEventListener("click", closeModal);
-    document
-      .getElementById("modal-backdrop")
-      ?.addEventListener("click", closeModal);
+    document.getElementById("btn-open-modal")?.addEventListener("click", () => openModal(false));
+    document.getElementById("mobile-add-btn")?.addEventListener("click", () => openModal(false));
+    document.getElementById("btn-close-modal")?.addEventListener("click", closeModal);
+    document.getElementById("btn-cancel-modal")?.addEventListener("click", closeModal);
+    document.getElementById("modal-backdrop")?.addEventListener("click", closeModal);
 
-    // --- LÓGICA DE EDICIÓN ---
-    // Usamos delegación de eventos porque los botones se crean dinámicamente
     document.querySelectorAll(".btn-edit-client").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        // 1. Obtener datos del atributo
-        const clientData = JSON.parse(btn.dataset.client);
-
-        // 2. Rellenar formulario
-        form.elements["client_name"].value = clientData.client_name;
-        form.elements["client_document_id"].value =
-          clientData.client_document_id;
-        form.elements["client_address"].value = clientData.client_address;
-        form.elements["client_phone"].value = clientData.client_phone;
-
-        // IMPORTANTE: Setear el ID en el input hidden
-        // Asumo que tu objeto client tiene un campo 'id' o '_id'. Ajusta según tu BD.
-        form.elements["id"].value = clientData.id || clientData._id;
-
-        // 3. Cambiar UI del modal
-        modalTitle.innerText = "Editar Cliente";
-        btnSave.innerHTML = "<span>Actualizar Cliente</span>";
-
-        // 4. Abrir
-        openModal(true);
-      });
-    });
-
-    // --- LÓGICA DE GUARDADO (POST/PUT) ---
-    form?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const btn = btnSave;
-      const originalContent = btn.innerHTML;
-      const formData = new FormData(form);
-      const clientId = formData.get("id"); // Verificar si existe ID
-
-      // Datos básicos
-      const payload = {
-        client_name: formData.get("client_name"),
-        client_document_id: formData.get("client_document_id"),
-        client_address: formData.get("client_address"),
-        client_phone: formData.get("client_phone"),
-      };
-
-      btn.innerHTML = "<span class='animate-pulse'>Procesando...</span>";
-      btn.disabled = true;
-
-      try {
-        let url = "http://localhost:3000/api/clients";
-        let method = "POST";
-
-        // Si hay ID, cambiamos a modo EDICION
-        if (clientId) {
-          url = `http://localhost:3000/api/clients/${clientId}`;
-          method = "PUT"; // O 'PATCH' dependiendo de tu backend
-        }
-
-        const res = await fetch(url, {
-          method: method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            const data = JSON.parse(btn.dataset.client);
+            form.elements["client_name"].value = data.client_name;
+            form.elements["client_document_id"].value = data.client_document_id;
+            form.elements["client_address"].value = data.client_address;
+            form.elements["client_phone"].value = data.client_phone;
+            form.elements["id"].value = data.client_id;
+            
+            modalTitle.innerText = "Editar Cliente";
+            btnSave.innerHTML = "<span>Actualizar</span>";
+            openModal(true);
         });
-
-        if (res.ok) {
-          closeModal();
-          window.navigateTo("clients"); // Recargar vista
-        } else {
-          alert("Error al procesar la solicitud");
-        }
-      } catch (error) {
-        console.error(error);
-        alert("Error de conexión con el servidor");
-      } finally {
-        btn.innerHTML = originalContent;
-        btn.disabled = false;
-      }
     });
 
-    // --- Lógica de Filtro Unificada ---
-    const handleSearch = (e) => {
-      const term = e.target.value.toLowerCase();
-      const rows = document.querySelectorAll(".crud-row");
+    form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const originalText = btnSave.innerHTML;
+        const formData = new FormData(form);
+        const id = formData.get("id");
+        
+        btnSave.innerHTML = "Procesando...";
+        btnSave.disabled = true;
 
-      rows.forEach((row) => {
-        const name =
-          row.querySelector(".client-name-text")?.innerText.toLowerCase() || "";
-        const phone =
-          row.querySelector(".client-phone-text")?.innerText.toLowerCase() ||
-          "";
+        try {
+            const url = id ? `http://localhost:3000/api/clients/${id}` : "http://localhost:3000/api/clients";
+            const method = id ? "PUT" : "POST";
+            
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(Object.fromEntries(formData)),
+            });
 
-        if (name.includes(term) || phone.includes(term)) {
-          row.style.display = "flex"; // Grid rows suelen ser flex en mi diseño
-        } else {
-          row.style.display = "none";
+            if (res.ok) {
+                closeModal();
+                window.navigateTo("clients");
+            } else {
+                alert("Error al guardar");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error de conexión");
+        } finally {
+            btnSave.innerHTML = originalText;
+            btnSave.disabled = false;
         }
-      });
-    };
+    });
 
-    // Conectar ambos inputs de búsqueda a la misma lógica
-    searchInputs.forEach((input) =>
-      input?.addEventListener("input", handleSearch)
-    );
-  }
+    const handleSearch = (e) => {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll(".crud-row").forEach(row => {
+            const txt = row.innerText.toLowerCase();
+            row.style.display = txt.includes(term) ? "flex" : "none";
+        });
+    };
+    searchInputs.forEach(input => input?.addEventListener("input", handleSearch));
 };
 
-// Init
-app.innerHTML = routes.login();
-setupListeners("login");
+// --- 5. LÓGICA DASHBOARD ---
+const handleDashboardLogic = () => {
+    const inputs = [document.getElementById("mobile-search-input"), document.getElementById("desktop-search-input")];
+    const goToCreate = () => window.navigateTo("create");
+    
+    document.getElementById("desktop-create-btn")?.addEventListener("click", goToCreate);
+    document.getElementById("mobile-create-btn")?.addEventListener("click", goToCreate);
+
+    const handleSearch = (e) => {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll(".crud-row").forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(term) ? "" : "none";
+        });
+    };
+    inputs.forEach(i => i?.addEventListener("keyup", handleSearch));
+};
+
+// --- 6. LÓGICA HOME ---
+const handleHomeLogic = () => {
+    document.getElementById("home-create-inv")?.addEventListener("click", () => window.navigateTo("create", { mode: "invoice" }));
+    document.getElementById("home-create-quote")?.addEventListener("click", () => window.navigateTo("create", { mode: "quote" }));
+    document.getElementById("month-filter")?.addEventListener("change", (e) => console.log("Filtro:", e.target.value));
+};
+
+// --- 7. LÓGICA PRODUCTOS ---
+const handleProductsLogic = () => {
+    const drawer = document.getElementById("product-drawer");
+    const open = () => drawer.classList.add("open");
+    const close = () => drawer.classList.remove("open");
+    document.getElementById("desktop-add-prod")?.addEventListener("click", open);
+    document.getElementById("mobile-add-prod")?.addEventListener("click", open);
+    document.getElementById("close-drawer-btn")?.addEventListener("click", close);
+    drawer?.addEventListener("click", (e) => { if(e.target === drawer) close(); });
+};
+
+
+// --- INICIALIZACIÓN ---
+const token = localStorage.getItem("authToken");
+if (token) {
+  window.navigateTo("home");
+} else {
+  app.innerHTML = routes.login();
+  setupListeners("login");
+}
