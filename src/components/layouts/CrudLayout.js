@@ -6,7 +6,7 @@ import '../ui/CrudTable.css'
 export const CrudLayout = async () => {
     const desktopSidebar = Sidebar('dashboard') // 'dashboard' activo en sidebar
     const mobileNavbar = `<div class="mobile-nav-container">${Navbar()}</div>`
-    
+
     // Botón para crear factura
     const createBtn = `<button id="desktop-create-btn" class="custom-button-primary bg-blue-600 text-white rounded-lg px-6 py-2.5 font-medium shadow-lg hover:bg-blue-700 transition-all active:scale-95 text-sm flex items-center gap-2">
         <i class="ri-add-line"></i> Nueva Factura
@@ -194,6 +194,9 @@ export const CrudLayout = async () => {
 
                 <button id="btn-export-excel-crud" class="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2 text-sm">
                     <i class="ri-file-excel-2-line"></i> Descargar Excel
+                </button>
+                <button id="btn-export-pdf-crud" class="px-6 py-2.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-500/20 transition-all flex items-center gap-2 text-sm">
+                    <i class="ri-file-pdf-line"></i> Descargar PDF
                 </button>
             </div>
         </div>

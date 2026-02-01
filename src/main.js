@@ -6,17 +6,19 @@ import "./style.css";
 import { ProductLayout } from "./components/layouts/ProductLayout";
 import { ClientsLayout } from "./components/layouts/ClientsLayout";
 import { ProfileLayout } from "./components/layouts/ProfileLayout";
+import { UsersLayout } from "./components/layouts/UsersLayout";
 
 const app = document.querySelector("#app");
 
 const routes = {
-  login: LoginLayout,
-  home: HomeLayout,
-  dashboard: CrudLayout, // Facturas
-  create: InvoiceLayout,
-  products: ProductLayout,
-  clients: ClientsLayout,
-  config: ProfileLayout,
+    login: LoginLayout,
+    home: HomeLayout,
+    dashboard: CrudLayout, // Facturas
+    create: InvoiceLayout,
+    products: ProductLayout,
+    clients: ClientsLayout,
+    config: ProfileLayout,
+    users: UsersLayout,
 };
 
 // Estado para navegación
@@ -24,281 +26,335 @@ let isNavigating = false;
 
 // --- ROUTER PRINCIPAL ---
 window.navigateTo = async (routeName, params = {}) => {
-  if (isNavigating) return;
-  isNavigating = true;
+    if (isNavigating) return;
+    isNavigating = true;
 
-  const currentContent = app.firstElementChild;
-  if (currentContent) {
-    currentContent.style.transition = "opacity 0.2s ease, transform 0.2s ease";
-    currentContent.style.opacity = "0";
-    currentContent.style.transform = "scale(0.99)";
-  }
-
-  setTimeout(async () => {
-    try {
-      app.innerHTML = await routes[routeName]();
-    } catch (error) {
-      console.error("Error renderizando ruta:", error);
-      app.innerHTML = await routes.login();
-      routeName = 'login';
+    const currentContent = app.firstElementChild;
+    if (currentContent) {
+        // Salida más rpida delegada a CSS (opcional) o JS simple
+        currentContent.style.opacity = "0";
+        currentContent.style.transform = "translateY(-10px)";
     }
 
-    if (routeName === "login") {
-      app.style.alignItems = "center";
-      app.style.display = "flex";
-    } else {
-      app.style.alignItems = "flex-start";
-      app.style.display = "block";
-    }
+    setTimeout(async () => {
+        try {
+            app.innerHTML = await routes[routeName]();
+        } catch (error) {
+            console.error("Error renderizando ruta:", error);
+            app.innerHTML = await routes.login();
+            routeName = 'login';
+        }
 
-    app.style.opacity = "1";
-    
-    setupListeners(routeName, params);
-    
-    isNavigating = false;
-  }, 200);
+        if (routeName === "login") {
+            app.style.alignItems = "center";
+            app.style.display = "flex";
+        } else {
+            app.style.alignItems = "flex-start";
+            app.style.display = "block";
+        }
+
+        // Reiniciar opacidad para entrada (Fade In manejado por CSS .animate-fade-in si se usa en layouts)
+        app.style.opacity = "1";
+
+        // Scroll al topo
+        window.scrollTo(0, 0);
+
+        setupListeners(routeName, params);
+
+        isNavigating = false;
+    }, 150); // Tiempo reducido para mayor respuesta
 };
 
 // --- ORQUESTADOR DE LISTENERS ---
 const setupListeners = (route, params) => {
-  setupGlobalNavigation();
+    setupGlobalNavigation();
 
-  switch (route) {
-    case "login":
-      handleLoginLogic();
-      break;
-    case "create":
-      handleCreateInvoiceLogic(params);
-      break;
-    case "clients":
-      handleClientsLogic();
-      break;
-    case "dashboard":
-      handleDashboardLogic();
-      break;
-    case "home":
-      handleHomeLogic();
-      break;
-    case "products":
-      handleProductsLogic();
-      break;
-    case "config":
-      handleProfileLogic();
-      break;
-  }
+    switch (route) {
+        case "login":
+            handleLoginLogic();
+            break;
+        case "create":
+            handleCreateInvoiceLogic(params);
+            break;
+        case "clients":
+            handleClientsLogic();
+            break;
+        case "dashboard":
+            handleDashboardLogic();
+            break;
+        case "home":
+            handleHomeLogic();
+            break;
+        case "products":
+            handleProductsLogic();
+            break;
+        case "config":
+            handleProfileLogic();
+            break;
+        case "users":
+            handleUsersLogic();
+            break;
+    }
 };
 
 // --- 1. NAVEGACIÓN GLOBAL ---
 const setupGlobalNavigation = () => {
-  document.querySelectorAll(".sidebar-link").forEach((el) => {
-    el.addEventListener("click", (e) => {
-      e.preventDefault();
-      // Si es botón de logout
-      if (el.innerText.includes("Cerrar Sesión") || el.querySelector('.ri-logout-box-line')) {
-        handleLogout();
-        return;
-      }
-      
-      const id = el.dataset.link;
-      if (id) window.navigateTo(id);
-    });
-  });
+    document.querySelectorAll(".sidebar-link").forEach((el) => {
+        el.addEventListener("click", (e) => {
+            e.preventDefault();
+            // Si es botón de logout
+            if (el.innerText.includes("Cerrar Sesión") || el.querySelector('.ri-logout-box-line')) {
+                handleLogout();
+                return;
+            }
 
-  document.querySelectorAll(".nav-item").forEach((link) => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      const text = link.innerText.trim();
-      if (text === "Inicio") window.navigateTo("home");
-      if (text === "Facts") window.navigateTo("dashboard");
-      if (text === "Prods") window.navigateTo("products");
-      if (text === "Clientes") window.navigateTo("clients");
+            const id = el.dataset.link;
+            if (id) window.navigateTo(id);
+        });
     });
-  });
 
-  const handleCreate = (e) => {
-    e.preventDefault();
-    window.navigateTo("create");
-  };
-  document.getElementById("btn-create-invoice")?.addEventListener("click", handleCreate);
-  document.getElementById("home-btn-create")?.addEventListener("click", handleCreate);
+    document.querySelectorAll(".nav-item").forEach((link) => {
+        link.addEventListener("click", (e) => {
+            e.preventDefault();
+            const text = link.innerText.trim();
+            if (text === "Inicio") window.navigateTo("home");
+            if (text === "Facts") window.navigateTo("dashboard");
+            if (text === "Prods") window.navigateTo("products");
+            if (text === "Clientes") window.navigateTo("clients");
+        });
+    });
+
+    const handleCreate = (e) => {
+        e.preventDefault();
+        window.navigateTo("create");
+    };
+    document.getElementById("btn-create-invoice")?.addEventListener("click", handleCreate);
+    document.getElementById("home-btn-create")?.addEventListener("click", handleCreate);
 };
 
 // --- 2. LÓGICA DE LOGIN ---
 const handleLoginLogic = () => {
-  const loader = document.querySelector('#main-loader');
-  if (loader && !loader.classList.contains('hidden-loader')) {
-      setTimeout(() => { loader.style.display = 'none'; }, 500);
-  }
-
-  const loginForm = document.getElementById("login-form");
-  loginForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector("button");
-    const originalText = btn.innerText;
-
-    const formData = new FormData(loginForm);
-    const payload = {
-      email: formData.get("username"),
-      password: formData.get("password"),
-    };
-
-    btn.innerText = "Autenticando...";
-    btn.disabled = true;
-    btn.style.opacity = "0.7";
-
-    try {
-      const response = await fetch("http://localhost:2020/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.message || "Error en credenciales");
-
-      localStorage.setItem("userId", data.user.id);
-      localStorage.setItem("userData", JSON.stringify(data.user));
-      localStorage.setItem("authToken", data.token);
-
-      btn.innerText = "¡Éxito!";
-      btn.style.backgroundColor = "#27ae60";
-
-      setTimeout(() => window.navigateTo("home"), 500);
-    } catch (error) {
-      console.error(error);
-      btn.innerText = "Error: Verifique datos";
-      btn.style.backgroundColor = "#e74c3c";
-      setTimeout(() => {
-        btn.innerText = originalText;
-        btn.disabled = false;
-        btn.style.opacity = "1";
-        btn.style.backgroundColor = "";
-      }, 2000);
+    const loader = document.querySelector('#main-loader');
+    if (loader && !loader.classList.contains('hidden-loader')) {
+        setTimeout(() => { loader.style.display = 'none'; }, 500);
     }
-  });
+
+    const loginForm = document.getElementById("login-form");
+    loginForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector("button");
+        const originalText = btn.innerText;
+
+        const formData = new FormData(loginForm);
+        const payload = {
+            email: formData.get("username"),
+            password: formData.get("password"),
+        };
+
+        btn.innerText = "Autenticando...";
+        btn.disabled = true;
+        btn.style.opacity = "0.7";
+
+        try {
+            const response = await fetch("http://localhost:2020/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.message || "Error en credenciales");
+
+            localStorage.setItem("userId", data.user.id);
+            localStorage.setItem("userData", JSON.stringify(data.user));
+            localStorage.setItem("authToken", data.token);
+            localStorage.setItem("userType", data.user.user_type || 'user');
+
+            btn.innerText = "¡Éxito!";
+            btn.style.backgroundColor = "#27ae60";
+
+            setTimeout(() => window.navigateTo("home"), 500);
+        } catch (error) {
+            console.error(error);
+            btn.innerText = "Error: Verifique datos";
+            btn.style.backgroundColor = "#e74c3c";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.style.backgroundColor = "";
+            }, 2000);
+        }
+    });
 };
 
 const handleLogout = () => {
-  localStorage.removeItem("authToken");
-  localStorage.removeItem("userId");
-  localStorage.removeItem("userData");
-  window.navigateTo("login");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("userType");
+    window.navigateTo("login");
 };
 
 // --- 3. LÓGICA DE CREAR FACTURA (COMPLETA) ---
 const handleCreateInvoiceLogic = (params) => {
-  // Referencias DOM
-  const itemsContainer = document.getElementById("items-container");
-  const btnAddItem = document.getElementById("btn-add-item");
-  const previewModal = document.getElementById("preview-modal");
-  const btnClosePreview = document.getElementById("btn-close-preview");
-  const btnEditMode = document.getElementById("btn-edit-mode");
-  const btnConfirm = document.getElementById("btn-confirm-invoice");
-  const previewBackdrop = document.getElementById("preview-backdrop");
-  
-  const clientSelect = document.querySelector("select[name='client']");
-  const dateIssuedInput = document.querySelector("input[name='date_issued']");
-  const dateDueInput = document.querySelector("input[name='date_due']");
-  const taxToggle = document.getElementById("tax-toggle");
+    // Referencias DOM
+    const itemsContainer = document.getElementById("items-container");
+    const btnAddItem = document.getElementById("btn-add-item");
+    const previewModal = document.getElementById("preview-modal");
+    const btnClosePreview = document.getElementById("btn-close-preview");
+    const btnEditMode = document.getElementById("btn-edit-mode");
+    const btnConfirm = document.getElementById("btn-confirm-invoice");
+    const previewBackdrop = document.getElementById("preview-backdrop");
 
-  const btnInvoice = document.getElementById("btn-mode-invoice");
-  const btnQuote = document.getElementById("btn-mode-quote");
+    const clientSelect = document.querySelector("select[name='client']");
+    const dateIssuedInput = document.querySelector("input[name='date_issued']");
+    const dateDueInput = document.querySelector("input[name='date_due']");
+    const taxToggle = document.getElementById("tax-toggle");
 
-  // Estado Local
-  let currentDocType = params && params.mode === 'quote' ? "COTIZACION" : "FACTURA";
+    const btnInvoice = document.getElementById("btn-mode-invoice");
+    const btnQuote = document.getElementById("btn-mode-quote");
 
-  // --- DEFINICIÓN DE FUNCIONES INTERNAS ---
+    // Estado Local
+    let currentDocType = params && params.mode === 'quote' ? "COTIZACION" : "FACTURA";
 
-  const updateDocTypeUI = (type) => {
-      currentDocType = type;
-      const activeClass = ["bg-white", "text-blue-600", "shadow-sm"];
-      const inactiveClass = ["text-gray-500"];
+    // --- DEFINICIÓN DE FUNCIONES INTERNAS ---
 
-      if (type === "FACTURA") {
-          btnInvoice?.classList.add(...activeClass);
-          btnInvoice?.classList.remove(...inactiveClass);
-          btnQuote?.classList.remove(...activeClass);
-          btnQuote?.classList.add(...inactiveClass);
-      } else {
-          btnQuote?.classList.add(...activeClass);
-          btnQuote?.classList.remove(...inactiveClass);
-          btnInvoice?.classList.remove(...activeClass);
-          btnInvoice?.classList.add(...inactiveClass);
-      }
-  };
+    const updateDocTypeUI = (type) => {
+        currentDocType = type;
+        const activeClass = ["bg-white", "text-blue-600", "shadow-sm"];
+        const inactiveClass = ["text-gray-500"];
 
-  const calculateTotals = () => {
-    let subtotal = 0;
-    const items = [];
+        if (type === "FACTURA") {
+            btnInvoice?.classList.add(...activeClass);
+            btnInvoice?.classList.remove(...inactiveClass);
+            btnQuote?.classList.remove(...activeClass);
+            btnQuote?.classList.add(...inactiveClass);
+        } else {
+            btnQuote?.classList.add(...activeClass);
+            btnQuote?.classList.remove(...inactiveClass);
+            btnInvoice?.classList.remove(...activeClass);
+            btnInvoice?.classList.add(...inactiveClass);
+        }
+    };
 
-    document.querySelectorAll(".item-row").forEach((row) => {
-      const desc = row.querySelector(".item-desc").value;
-      const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
-      const price = parseFloat(row.querySelector(".item-price").value) || 0;
-      const totalRow = qty * price;
-      
-      subtotal += totalRow;
+    const calculateTotals = () => {
+        let subtotal = 0;
+        const items = [];
 
-      if (desc && qty > 0) {
-        items.push({ description: desc, quantity: qty, unit_price: price, total_row: totalRow });
-      }
-    });
+        document.querySelectorAll(".item-row").forEach((row) => {
+            const desc = row.querySelector(".item-desc").value;
+            const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+            const price = parseFloat(row.querySelector(".item-price").value) || 0;
+            const totalRow = qty * price;
 
-    const applyTax = taxToggle?.checked ?? false;
-    const tax = applyTax ? subtotal * 0.16 : 0;
-    const total = subtotal + tax;
+            subtotal += totalRow;
 
-    document.getElementById("form-subtotal").innerText = `$${subtotal.toFixed(2)}`;
-    document.getElementById("form-tax").innerText = `$${tax.toFixed(2)}`;
-    document.getElementById("form-total").innerText = `$${total.toFixed(2)}`;
+            if (desc && qty > 0) {
+                items.push({ description: desc, quantity: qty, unit_price: price, total_row: totalRow });
+            }
+        });
 
-    return { subtotal, tax, total, items, applyTax };
-  };
+        const applyTax = taxToggle?.checked ?? false;
+        const tax = applyTax ? subtotal * 0.16 : 0;
+        const total = subtotal + tax;
 
-  const createRow = () => {
-    const row = document.createElement("div");
-    row.className = "grid grid-cols-12 gap-3 items-center item-row animate-fade-in mb-2";
-    row.innerHTML = `
-        <div class="col-span-6 md:col-span-5"><input type="text" placeholder="Descripción..." class="item-desc w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"></div>
-        <div class="col-span-2 md:col-span-2"><input type="number" min="1" value="1" class="item-qty w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm text-center outline-none focus:bg-white focus:ring-2 focus:ring-blue-100"></div>
-        <div class="col-span-3 md:col-span-3"><input type="number" min="0" step="0.01" placeholder="0.00" class="item-price w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm text-right outline-none focus:bg-white focus:ring-2 focus:ring-blue-100"></div>
+        document.getElementById("form-subtotal").innerText = `$${subtotal.toFixed(2)}`;
+        document.getElementById("form-tax").innerText = `$${tax.toFixed(2)}`;
+        document.getElementById("form-total").innerText = `$${total.toFixed(2)}`;
+
+        return { subtotal, tax, total, items, applyTax };
+    };
+
+    const createRow = (data = null) => {
+        const row = document.createElement("div");
+        row.className = "grid grid-cols-12 gap-3 items-center item-row animate-fade-in mb-2";
+
+        const initialDesc = data ? data.description : "";
+        const initialQty = data ? data.quantity : 1;
+        const initialPrice = data ? data.unit_price : "";
+
+        row.innerHTML = `
+        <div class="col-span-6 md:col-span-5"><input type="text" placeholder="Descripción..." value="${initialDesc}" class="item-desc w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"></div>
+        <div class="col-span-2 md:col-span-2"><input type="number" min="1" value="${initialQty}" class="item-qty w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm text-center outline-none focus:bg-white focus:ring-2 focus:ring-blue-100"></div>
+        <div class="col-span-3 md:col-span-3"><input type="number" min="0" step="0.01" placeholder="0.00" value="${initialPrice}" class="item-price w-full bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm text-right outline-none focus:bg-white focus:ring-2 focus:ring-blue-100"></div>
         <div class="col-span-1 md:col-span-2 flex justify-center"><button class="btn-remove-item text-gray-400 hover:text-red-500 p-2 transition-colors"><i class="ri-delete-bin-line"></i></button></div>
     `;
 
-    row.querySelectorAll("input").forEach((i) => i.addEventListener("input", calculateTotals));
-    row.querySelector(".btn-remove-item").addEventListener("click", () => {
-      row.remove();
-      calculateTotals();
-    });
+        row.querySelectorAll("input").forEach((i) => i.addEventListener("input", calculateTotals));
+        row.querySelector(".btn-remove-item").addEventListener("click", () => {
+            row.remove();
+            calculateTotals();
+        });
 
-    itemsContainer.appendChild(row);
-  };
+        itemsContainer.appendChild(row);
+    };
 
-  const openPreview = () => {
-    const { subtotal, tax, total, items } = calculateTotals();
-    
-    if (!clientSelect.value) return alert("Por favor selecciona un cliente.");
-    if (!dateIssuedInput.value) return alert("La fecha de emisión es obligatoria.");
 
-    // Formato de fechas
-    const [yIssue, mIssue, dIssue] = dateIssuedInput.value.split('-').map(Number);
-    const issueDateObj = new Date(yIssue, mIssue - 1, dIssue);
-    const dateOpts = { year: 'numeric', month: 'long', day: 'numeric' };
+    // --- State Handler for Editing ---
+    let isEditing = false;
+    let editingId = null;
 
-    document.getElementById("paper-type").innerText = "SUMINISTROS DEPOMED";
-    document.getElementById("paper-client").innerText = clientSelect.options[clientSelect.selectedIndex].text;
-    document.getElementById("paper-date").innerText = issueDateObj.toLocaleDateString('es-ES', dateOpts);
-    
-    // Generar un control no. dummy para el preview
-    document.getElementById("paper-control-no").innerText = `CONTROL: 00-${Math.floor(Math.random() * 99999).toString().padStart(5, '0')}`;
-    document.getElementById("paper-invoice-id").innerText = "BORRADOR";
+    // CHECK GLOBAL VAR FROM loadInvoiceForEditing (Race cond fix)
+    if (window.invoiceToEdit) {
+        const invoice = window.invoiceToEdit;
+        window.invoiceToEdit = null; // Clear it
 
-    const tbody = document.getElementById("paper-items-body");
-    if(items.length === 0){
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-400">Sin ítems</td></tr>`;
-    } else {
-        tbody.innerHTML = items.map(item => `
+        isEditing = true;
+        editingId = invoice.invoice_id;
+
+        // UI Updates
+        setTimeout(() => { // Ensure DOM fully ready if needed, though usually safe here
+            const btnText = document.getElementById("btn-text-confirm");
+            if (btnText) btnText.innerText = "Actualizar Factura";
+
+            // Populate inputs
+            if (clientSelect) clientSelect.value = invoice.client_id;
+            if (dateIssuedInput) dateIssuedInput.value = new Date(invoice.invoice_date).toISOString().split('T')[0];
+
+            // Set Tax Toggle
+            if (taxToggle) {
+                taxToggle.checked = (invoice.apply_tax === 1 || invoice.apply_tax === true);
+            }
+
+            // Clear and repopulate items
+            itemsContainer.innerHTML = '';
+            invoice.items.forEach(item => {
+                createRow({
+                    description: item.description,
+                    quantity: item.quantity,
+                    unit_price: item.unit_price
+                });
+            });
+            calculateTotals();
+        }, 50);
+    }
+
+    const openPreview = () => {
+        const { subtotal, tax, total, items } = calculateTotals();
+
+        if (!clientSelect.value) return alert("Por favor selecciona un cliente.");
+        if (!dateIssuedInput.value) return alert("La fecha de emisión es obligatoria.");
+
+        // Formato de fechas
+        const [yIssue, mIssue, dIssue] = dateIssuedInput.value.split('-').map(Number);
+        const issueDateObj = new Date(yIssue, mIssue - 1, dIssue);
+        const dateOpts = { year: 'numeric', month: 'long', day: 'numeric' };
+
+        document.getElementById("paper-type").innerText = "SUMINISTROS DEPOMED";
+        document.getElementById("paper-client").innerText = clientSelect.options[clientSelect.selectedIndex].text;
+        document.getElementById("paper-date").innerText = issueDateObj.toLocaleDateString('es-ES', dateOpts);
+
+        // Generar un control no. dummy para el preview
+        document.getElementById("paper-control-no").innerText = `CONTROL: 00-${Math.floor(Math.random() * 99999).toString().padStart(5, '0')}`;
+        document.getElementById("paper-invoice-id").innerText = "BORRADOR";
+
+        const tbody = document.getElementById("paper-items-body");
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-400">Sin ítems</td></tr>`;
+        } else {
+            tbody.innerHTML = items.map(item => `
             <tr>
                 <td class="py-2 pl-4 text-gray-800 border-b border-gray-50">${item.quantity}</td>
                 <td class="py-2 text-gray-600 border-b border-gray-50">-</td>
@@ -307,254 +363,293 @@ const handleCreateInvoiceLogic = (params) => {
                 <td class="py-2 text-right font-medium text-gray-800 border-b border-gray-50 pr-4">$${item.total_row.toFixed(2)}</td>
             </tr>
         `).join("");
-    }
-
-    document.getElementById("paper-subtotal").innerText = `$${subtotal.toFixed(2)}`;
-    document.getElementById("paper-tax").innerText = `$${tax.toFixed(2)}`;
-    document.getElementById("paper-total-bottom").innerText = `$${total.toFixed(2)}`;
-
-    previewModal.classList.remove("opacity-0", "pointer-events-none");
-    previewModal.querySelector("#preview-content").classList.remove("scale-95");
-    previewModal.querySelector("#preview-content").classList.add("scale-100");
-  };
-
-  const closePreview = () => {
-    previewModal.classList.add("opacity-0", "pointer-events-none");
-    previewModal.querySelector("#preview-content").classList.add("scale-95");
-    previewModal.querySelector("#preview-content").classList.remove("scale-100");
-  };
-
-  const handleExportExcel = async (customId = null) => {
-    const { subtotal, tax, total, items } = calculateTotals();
-    const clientName = clientSelect.options[clientSelect.selectedIndex].text;
-    
-    const payload = {
-        invoice_id: customId || 'BORRADOR',
-        invoice_date: dateIssuedInput.value,
-        client_name: clientName,
-        items: items,
-        subtotal: subtotal,
-        tax: tax,
-        total_amount: total
-    };
-
-    try {
-        const btnExport = document.getElementById("btn-export-excel");
-        if (btnExport) {
-            btnExport.disabled = true;
-            btnExport.classList.add("opacity-50");
         }
 
-        const response = await fetch("http://localhost:3000/api/export-excel", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
+        document.getElementById("paper-subtotal").innerText = `$${subtotal.toFixed(2)}`;
+        document.getElementById("paper-tax").innerText = `$${tax.toFixed(2)}`;
+        document.getElementById("paper-total-bottom").innerText = `$${total.toFixed(2)}`;
 
-        if (!response.ok) throw new Error("Error al generar Excel");
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Factura_${clientName.replace(/\s+/g, '_')}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        if (btnExport) {
-            btnExport.disabled = false;
-            btnExport.classList.remove("opacity-50");
-        }
-    } catch (error) {
-        console.error(error);
-    }
-  };
-
-  // --- EJECUCIÓN INICIAL ---
-  updateDocTypeUI(currentDocType);
-  createRow();
-
-  // Listeners
-  btnAddItem?.addEventListener("click", createRow);
-  taxToggle?.addEventListener("change", calculateTotals);
-  btnInvoice?.addEventListener("click", (e) => { e.preventDefault(); updateDocTypeUI("FACTURA"); });
-  btnQuote?.addEventListener("click", (e) => { e.preventDefault(); updateDocTypeUI("COTIZACION"); });
-
-  document.getElementById("btn-open-preview")?.addEventListener("click", openPreview);
-  document.getElementById("btn-mobile-preview")?.addEventListener("click", openPreview);
-  btnClosePreview?.addEventListener("click", closePreview);
-  btnEditMode?.addEventListener("click", closePreview);
-  previewBackdrop?.addEventListener("click", closePreview);
-  document.getElementById("btn-export-excel")?.addEventListener("click", () => handleExportExcel());
-
-  // --- SUBMIT (Guardado en 2 Pasos) ---
-  btnConfirm?.addEventListener("click", async () => {
-    const btnText = document.getElementById("btn-text-confirm");
-    const originalText = btnText.innerText;
-    
-    const currentUserId = localStorage.getItem("userId");
-    if (!currentUserId) {
-        alert("Tu sesión ha expirado.");
-        return handleLogout();
-    }
-
-    const { total, items } = calculateTotals();
-    const fullInvoiceObject = {
-      client_id: parseInt(clientSelect.value),
-      created_by_user_id: parseInt(currentUserId),
-      invoice_type: currentDocType,
-      invoice_status: "PENDIENTE",
-      total_amount: total,
-      invoice_date: dateIssuedInput.value, 
-      due_date: dateDueInput.value,
-      items: items,
+        previewModal.classList.remove("opacity-0", "pointer-events-none");
+        previewModal.querySelector("#preview-content").classList.remove("scale-95");
+        previewModal.querySelector("#preview-content").classList.add("scale-100");
     };
 
-    try {
-      btnText.innerText = "Procesando...";
-      btnConfirm.disabled = true;
+    const closePreview = () => {
+        previewModal.classList.add("opacity-0", "pointer-events-none");
+        previewModal.querySelector("#preview-content").classList.add("scale-95");
+        previewModal.querySelector("#preview-content").classList.remove("scale-100");
+    };
 
-      // 1. Crear Cabecera
-      const resInvoice = await fetch("http://localhost:3000/api/invoices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          client_id: fullInvoiceObject.client_id,
-          created_by_user_id: fullInvoiceObject.created_by_user_id,
-          invoice_type: fullInvoiceObject.invoice_type,
-          invoice_status: fullInvoiceObject.invoice_status,
-          total_amount: fullInvoiceObject.total_amount,
-          invoice_date: fullInvoiceObject.invoice_date,
-          due_date: fullInvoiceObject.due_date
-        }),
-      });
+    const handleExportExcel = async (customId = null) => {
+        const { subtotal, tax, total, items, applyTax } = calculateTotals();
+        const clientName = clientSelect.options[clientSelect.selectedIndex].text;
 
-      if (!resInvoice.ok) throw new Error("Error al crear la cabecera.");
-      
-      const responseData = await resInvoice.json();
-      const newInvoiceId = responseData.id;
+        const payload = {
+            invoice_id: customId || 'BORRADOR',
+            invoice_date: dateIssuedInput.value,
+            client_name: clientName,
+            items: items,
+            subtotal: subtotal,
+            tax: tax,
+            total_amount: total,
+            apply_tax: applyTax
+        };
 
-      // 2. Crear Detalles
-      for (const item of items) {
-        await fetch("http://localhost:3000/api/invoice_details", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            invoice_id: newInvoiceId,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-          }),
-        });
-      }
+        try {
+            const btnExport = document.getElementById("btn-export-excel");
+            if (btnExport) {
+                btnExport.disabled = true;
+                btnExport.classList.add("opacity-50");
+            }
 
-      // 3. Descargar Excel Automáticamente
-      await handleExportExcel(newInvoiceId);
+            const response = await fetch("http://localhost:3000/api/export-excel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
 
-      alert(`${currentDocType} #${newInvoiceId} creada exitosamente y descargada.`);
-      window.navigateTo("dashboard");
+            if (!response.ok) throw new Error("Error al generar Excel");
 
-    } catch (error) {
-      console.error(error);
-      alert("Error: " + error.message);
-    } finally {
-      btnText.innerText = originalText;
-      btnConfirm.disabled = false;
-    }
-  });
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Factura_${clientName.replace(/\s+/g, '_')}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
 
-  // --- Quick Client Creation Logic ---
-  const quickModal = document.getElementById("quick-client-modal");
-  const quickBackdrop = document.getElementById("quick-client-backdrop");
-  const btnQuickAdd = document.getElementById("btn-quick-add-client");
-  const btnCancelQuick = document.getElementById("btn-cancel-quick");
-  const quickForm = document.getElementById("quick-client-form");
+            if (btnExport) {
+                btnExport.disabled = false;
+                btnExport.classList.remove("opacity-50");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
-  const closeQuickModal = () => {
-      quickModal.classList.remove("opacity-100", "pointer-events-auto");
-      quickModal.classList.add("opacity-0", "pointer-events-none");
-      quickModal.querySelector("div[class*='transform']").classList.remove("scale-100");
-      quickModal.querySelector("div[class*='transform']").classList.add("scale-95");
-      quickForm.reset();
-  };
+    // --- EJECUCIÓN INICIAL ---
+    updateDocTypeUI(currentDocType);
+    createRow();
 
-  const openQuickModal = () => {
-      quickModal.classList.remove("opacity-0", "pointer-events-none");
-      quickModal.classList.add("opacity-100", "pointer-events-auto");
-      quickModal.querySelector("div[class*='transform']").classList.remove("scale-95");
-      quickModal.querySelector("div[class*='transform']").classList.add("scale-100");
-  };
+    // Listeners
+    btnAddItem?.addEventListener("click", createRow);
+    taxToggle?.addEventListener("change", calculateTotals);
+    btnInvoice?.addEventListener("click", (e) => { e.preventDefault(); updateDocTypeUI("FACTURA"); });
+    btnQuote?.addEventListener("click", (e) => { e.preventDefault(); updateDocTypeUI("COTIZACION"); });
 
-  btnQuickAdd?.addEventListener("click", (e) => { e.preventDefault(); openQuickModal(); });
-  btnCancelQuick?.addEventListener("click", closeQuickModal);
-  quickBackdrop?.addEventListener("click", closeQuickModal);
+    document.getElementById("btn-open-preview")?.addEventListener("click", openPreview);
+    document.getElementById("btn-mobile-preview")?.addEventListener("click", openPreview);
+    btnClosePreview?.addEventListener("click", closePreview);
+    btnEditMode?.addEventListener("click", closePreview);
+    previewBackdrop?.addEventListener("click", closePreview);
+    document.getElementById("btn-export-excel")?.addEventListener("click", () => handleExportExcel());
 
-  quickForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const saveBtn = quickForm.querySelector("button[type='submit']");
-      const originalText = saveBtn.innerText;
-      
-      const formData = new FormData(quickForm);
-      const payload = {
-          client_name: formData.get("quick_name"),
-          client_document_id: formData.get("quick_id"),
-          client_address: "Dirección Pendiente",
-          client_phone: "0000000000",
-          is_active: 1
-      };
+    // --- SUBMIT (Guardado en 2 Pasos) ---
+    // --- SUBMIT (Guardado en 2 Pasos o Update Atómico) ---
+    btnConfirm?.addEventListener("click", async () => {
+        const btnText = document.getElementById("btn-text-confirm");
+        const originalText = btnText.innerText;
 
-      try {
-          saveBtn.innerText = "Guardando...";
-          saveBtn.disabled = true;
+        const currentUserId = localStorage.getItem("userId");
+        if (!currentUserId) {
+            alert("Tu sesión ha expirado.");
+            return handleLogout();
+        }
 
-          const res = await fetch("http://localhost:3000/api/clients", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-          });
+        const { total, items, applyTax } = calculateTotals();
 
-          if(res.ok) {
-              const newClient = await res.json();
-              
-              // Recargar clientes y seleccionar el nuevo
-              const resClients = await fetch('http://localhost:3000/api/clients');
-              const clients = await resClients.json();
-              
-              // Reconstruir opciones
-              // Nota: Se asume que el backend devuelve { id: ... } para el nuevo cliente.
-              // Ajustar si la respuesta es diferente.
-              
-              clientSelect.innerHTML = '<option value="">Seleccionar Cliente...</option>';
-              clients.forEach(c => {
-                   if(c.is_active !== 0) {
-                       const opt = document.createElement("option");
-                       opt.value = c.client_id;
-                       opt.text = c.client_name;
-                       if(c.client_id === newClient.id) opt.selected = true; 
-                       clientSelect.appendChild(opt);
-                   }
-              });
-              
-              // Si el ID devuelto es diferente al client_id (a veces pasa en INSERTs), buscamos el último
-              if(!newClient.id) {
-                   clientSelect.lastElementChild.selected = true;
-              }
+        if (items.length === 0) {
+            alert("Agrega al menos un ítem");
+            return;
+        }
 
-              closeQuickModal();
-          } else {
-              alert("Error al crear cliente");
-          }
+        try {
+            btnText.innerText = "Procesando...";
+            btnConfirm.disabled = true;
 
-      } catch (error) {
-          console.error(error);
-          alert("Error de conexión");
-      } finally {
-          saveBtn.innerText = originalText;
-          saveBtn.disabled = false;
-      }
-  });
+            const payloadCommon = {
+                client_id: parseInt(clientSelect.value),
+                invoice_date: dateIssuedInput.value,
+                total_amount: total,
+                apply_tax: applyTax, // Send tax status
+                items: items // Backend PUT expects this. POST legacy expects separate calls but we can assume updated backend might handle it?
+                // Wait, POST endpoint (createInvoice) in MoonController.js wasn't modified to accept items.
+                // So for CREATE (POST), we MUST keep the Loop logic or update backend.
+                // For UPDATE (PUT), we use the new atomic logic.
+            };
+
+            if (isEditing && editingId) {
+                // --- UPDATE LOGIC (Atomic PUT) ---
+                const res = await fetch(`http://localhost:3000/api/invoices/${editingId}`, {
+                    method: 'PUT',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payloadCommon)
+                });
+
+                if (!res.ok) throw new Error("Error al actualizar factura");
+
+                alert("Factura actualizada correctamente.");
+
+                // Reset State
+                isEditing = false;
+                editingId = null;
+                btnText.innerText = "Confirmar Factura";
+
+                // Cleanup / Reset Form ? or Navigate
+                window.navigateTo("dashboard");
+
+            } else {
+                // --- CREATE LOGIC (Legacy POST + Loop) ---
+                const fullInvoiceObject = {
+                    ...payloadCommon,
+                    created_by_user_id: parseInt(currentUserId),
+                    invoice_type: currentDocType,
+                    invoice_status: "PENDIENTE",
+                    due_date: dateDueInput.value
+                };
+
+                // 1. Crear Cabecera
+                const resInvoice = await fetch("http://localhost:3000/api/invoices", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        client_id: fullInvoiceObject.client_id,
+                        created_by_user_id: fullInvoiceObject.created_by_user_id,
+                        invoice_type: fullInvoiceObject.invoice_type,
+                        invoice_status: fullInvoiceObject.invoice_status,
+                        total_amount: fullInvoiceObject.total_amount,
+                        invoice_date: fullInvoiceObject.invoice_date,
+                        due_date: fullInvoiceObject.due_date
+                    }),
+                });
+
+                if (!resInvoice.ok) throw new Error("Error al crear la cabecera.");
+
+                const responseData = await resInvoice.json();
+                const newInvoiceId = responseData.id;
+
+                // 2. Crear Detalles (Legacy Loop)
+                for (const item of items) {
+                    await fetch("http://localhost:3000/api/invoice_details", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            invoice_id: newInvoiceId,
+                            description: item.description,
+                            quantity: item.quantity,
+                            unit_price: item.unit_price,
+                        }),
+                    });
+                }
+
+                // 3. Descargar Excel Automáticamente
+                await handleExportExcel(newInvoiceId);
+
+                alert(`${currentDocType} #${newInvoiceId} creada exitosamente y descargada.`);
+                window.navigateTo("dashboard");
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("Error: " + error.message);
+        } finally {
+            if (btnText) btnText.innerText = isEditing ? "Actualizar Factura" : "Confirmar Factura"; // Maintain correct state just in case
+            btnConfirm.disabled = false;
+        }
+    });
+
+    // --- Quick Client Creation Logic ---
+    const quickModal = document.getElementById("quick-client-modal");
+    const quickBackdrop = document.getElementById("quick-client-backdrop");
+    const btnQuickAdd = document.getElementById("btn-quick-add-client");
+    const btnCancelQuick = document.getElementById("btn-cancel-quick");
+    const quickForm = document.getElementById("quick-client-form");
+
+    const closeQuickModal = () => {
+        quickModal.classList.remove("opacity-100", "pointer-events-auto");
+        quickModal.classList.add("opacity-0", "pointer-events-none");
+        quickModal.querySelector("div[class*='transform']").classList.remove("scale-100");
+        quickModal.querySelector("div[class*='transform']").classList.add("scale-95");
+        quickForm.reset();
+    };
+
+    const openQuickModal = () => {
+        quickModal.classList.remove("opacity-0", "pointer-events-none");
+        quickModal.classList.add("opacity-100", "pointer-events-auto");
+        quickModal.querySelector("div[class*='transform']").classList.remove("scale-95");
+        quickModal.querySelector("div[class*='transform']").classList.add("scale-100");
+    };
+
+    btnQuickAdd?.addEventListener("click", (e) => { e.preventDefault(); openQuickModal(); });
+    btnCancelQuick?.addEventListener("click", closeQuickModal);
+    quickBackdrop?.addEventListener("click", closeQuickModal);
+
+    quickForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const saveBtn = quickForm.querySelector("button[type='submit']");
+        const originalText = saveBtn.innerText;
+
+        const formData = new FormData(quickForm);
+        const payload = {
+            client_name: formData.get("quick_name"),
+            client_document_id: formData.get("quick_id"),
+            client_address: "Dirección Pendiente",
+            client_phone: "0000000000",
+            is_active: 1
+        };
+
+        try {
+            saveBtn.innerText = "Guardando...";
+            saveBtn.disabled = true;
+
+            const res = await fetch("http://localhost:3000/api/clients", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                const newClient = await res.json();
+
+                // Recargar clientes y seleccionar el nuevo
+                const resClients = await fetch('http://localhost:3000/api/clients');
+                const clients = await resClients.json();
+
+                // Reconstruir opciones
+                // Nota: Se asume que el backend devuelve { id: ... } para el nuevo cliente.
+                // Ajustar si la respuesta es diferente.
+
+                clientSelect.innerHTML = '<option value="">Seleccionar Cliente...</option>';
+                clients.forEach(c => {
+                    if (c.is_active !== 0) {
+                        const opt = document.createElement("option");
+                        opt.value = c.client_id;
+                        opt.text = c.client_name;
+                        if (c.client_id === newClient.id) opt.selected = true;
+                        clientSelect.appendChild(opt);
+                    }
+                });
+
+                // Si el ID devuelto es diferente al client_id (a veces pasa en INSERTs), buscamos el último
+                if (!newClient.id) {
+                    clientSelect.lastElementChild.selected = true;
+                }
+
+                closeQuickModal();
+            } else {
+                alert("Error al crear cliente");
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("Error de conexión");
+        } finally {
+            saveBtn.innerText = originalText;
+            saveBtn.disabled = false;
+        }
+    });
 };
 
 // --- 4. LÓGICA DE CLIENTES ---
@@ -563,15 +658,15 @@ const handleClientsLogic = async () => {
     let currentPage = 1;
     const itemsPerPage = 10;
     const clientsList = document.getElementById("clients-list");
-    
+
     // --- Render Logic ---
     const renderTable = (page = 1, filterText = "") => {
         currentPage = page;
-        
+
         let filtered = clients;
-        if(filterText) {
+        if (filterText) {
             const lowerFilter = filterText.toLowerCase();
-            filtered = clients.filter(c => 
+            filtered = clients.filter(c =>
                 c.client_name.toLowerCase().includes(lowerFilter) ||
                 (c.client_document_id || "").includes(lowerFilter)
             );
@@ -579,7 +674,7 @@ const handleClientsLogic = async () => {
 
         const totalItems = filtered.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-        
+
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
@@ -628,7 +723,7 @@ const handleClientsLogic = async () => {
         document.getElementById("page-end").textContent = Math.min(startIndex + itemsPerPage, totalItems);
         document.getElementById("total-items").textContent = totalItems;
         document.getElementById("page-indicator").textContent = `Página ${currentPage}`;
-        
+
         const btnPrev = document.getElementById("btn-prev");
         const btnNext = document.getElementById("btn-next");
         const btnPrevMob = document.getElementById("btn-prev-mobile");
@@ -644,11 +739,11 @@ const handleClientsLogic = async () => {
     };
 
     const attachRowListeners = () => {
-         // --- DELETE LOGIC ---
+        // --- DELETE LOGIC ---
         document.querySelectorAll(".btn-delete-client").forEach((btn) => {
             btn.addEventListener("click", async (e) => {
-                if(!confirm("¿Estás seguro de eliminar este cliente?")) return;
-                
+                if (!confirm("¿Estás seguro de eliminar este cliente?")) return;
+
                 const id = btn.dataset.id;
                 try {
                     const res = await fetch(`http://localhost:3000/api/clients/${id}`, {
@@ -656,14 +751,14 @@ const handleClientsLogic = async () => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ is_active: 0 })
                     });
-    
-                    if(res.ok) {
+
+                    if (res.ok) {
                         // Refresh data
                         fetchClients();
                     } else {
                         alert("Error al eliminar cliente");
                     }
-                } catch(error) {
+                } catch (error) {
                     console.error(error);
                     alert("Error de conexión");
                 }
@@ -679,7 +774,7 @@ const handleClientsLogic = async () => {
                 document.querySelector("[name='client_document_id']").value = client.client_document_id;
                 document.querySelector("[name='client_phone']").value = client.client_phone;
                 document.querySelector("[name='client_address']").value = client.client_address;
-                
+
                 document.getElementById("modal-title").innerText = "Editar Cliente";
                 openModal();
             });
@@ -687,13 +782,13 @@ const handleClientsLogic = async () => {
     };
 
     const fetchClients = async () => {
-         try {
-             const res = await fetch('http://localhost:3000/api/clients');
-             clients = (await res.json()).filter(c => c.is_active !== 0);
-             renderTable(currentPage);
-         } catch(e) { console.error(e); }
+        try {
+            const res = await fetch('http://localhost:3000/api/clients');
+            clients = (await res.json()).filter(c => c.is_active !== 0);
+            renderTable(currentPage);
+        } catch (e) { console.error(e); }
     };
-    
+
     // Initial Fetch
     fetchClients();
 
@@ -753,7 +848,7 @@ const handleClientsLogic = async () => {
         e.preventDefault();
         const formData = new FormData(form);
         const id = formData.get("id");
-        
+
         const payload = {
             client_name: formData.get("client_name"),
             client_document_id: formData.get("client_document_id"),
@@ -772,13 +867,13 @@ const handleClientsLogic = async () => {
                 body: JSON.stringify(payload)
             });
 
-            if(res.ok) {
+            if (res.ok) {
                 closeModal();
                 fetchClients(); // Refresh list logic
             } else {
                 alert("Error al guardar");
             }
-        } catch(error) {
+        } catch (error) {
             console.error(error);
             alert("Error de conexión");
         }
@@ -798,11 +893,11 @@ const handleDashboardLogic = async () => {
     let invoices = [];
     let clients = [];
     let clientMap = {};
-    
+
     // Pagination State
     let currentPage = 1;
     const itemsPerPage = 10;
-    
+
     // Elements
     const invoicesList = document.getElementById("invoices-list");
 
@@ -831,9 +926,9 @@ const handleDashboardLogic = async () => {
     // --- Render Logic ---
     const renderTable = (page = 1, filterText = "") => {
         currentPage = page;
-        
+
         let filtered = invoices;
-        if(filterText) {
+        if (filterText) {
             const lowerFilter = filterText.toLowerCase();
             filtered = invoices.filter(inv => {
                 const clientName = clientMap[inv.client_id]?.toLowerCase() || "";
@@ -847,7 +942,7 @@ const handleDashboardLogic = async () => {
 
         const totalItems = filtered.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-        
+
         // Ensure page is valid
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
@@ -905,8 +1000,13 @@ const handleDashboardLogic = async () => {
                             data-client="${clientName}" 
                             data-date="${formatDate(inv.invoice_date)}" 
                             data-total="${formatCurrency(inv.total_amount)}" 
-                            data-status="${inv.invoice_status}">
+                            data-status="${inv.invoice_status}"
+                            data-apply_tax="${inv.apply_tax}">
                             <i class="ri-eye-line"></i>
+                        </button>
+                        <button class="btn-edit-invoice w-8 h-8 rounded-full hover:bg-orange-50 text-orange-500 transition-colors flex items-center justify-center" title="Editar Factura" 
+                            data-invoice_id="${inv.invoice_id}">
+                            <i class="ri-pencil-line"></i>
                         </button>
                     </div>
                 </div>`;
@@ -919,7 +1019,7 @@ const handleDashboardLogic = async () => {
         document.getElementById("page-end").textContent = Math.min(startIndex + itemsPerPage, totalItems);
         document.getElementById("total-items").textContent = totalItems;
         document.getElementById("page-indicator").textContent = `Página ${currentPage}`;
-        
+
         const btnPrev = document.getElementById("btn-prev");
         const btnNext = document.getElementById("btn-next");
         const btnPrevMob = document.getElementById("btn-prev-mobile");
@@ -935,6 +1035,36 @@ const handleDashboardLogic = async () => {
         document.querySelectorAll(".btn-view-invoice").forEach(btn => {
             btn.addEventListener("click", () => openModal(btn));
         });
+
+        document.querySelectorAll(".btn-edit-invoice").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const invoiceId = btn.dataset.invoice_id;
+                await loadInvoiceForEditing(invoiceId);
+            });
+        });
+    };
+
+    // --- EDIT LOGIC ---
+    let isEditing = false;
+    let editingInvoiceId = null;
+
+    const loadInvoiceForEditing = async (id) => {
+        try {
+            // 1. Fetch de detalles completos (Items)
+            const res = await fetch(`http://localhost:3000/api/invoices/${id}`);
+            if (!res.ok) throw new Error("Error cargando factura");
+            const invoice = await res.json();
+
+            // 2. Navegar a pantalla de Inicio (Formulario)
+            // GUARDAR DATOS EN GLOBAL
+            window.invoiceToEdit = invoice;
+            window.navigateTo("create");
+
+            // La lógica de populado se mueve a handleCreateInvoiceLogic
+        } catch (error) {
+            console.error(error);
+            alert("No se pudo cargar la factura para edición");
+        }
     };
 
     // --- Init Fetch ---
@@ -947,11 +1077,11 @@ const handleDashboardLogic = async () => {
         const allClients = await clientsRes.json();
         clients = allClients;
         allClients.forEach(c => clientMap[c.client_id] = c.client_name);
-        
+
         renderTable(1);
     } catch (error) {
-         console.error(error);
-         invoicesList.innerHTML = '<p class="text-center text-red-500 p-4">Error cargando datos</p>';
+        console.error(error);
+        invoicesList.innerHTML = '<p class="text-center text-red-500 p-4">Error cargando datos</p>';
     }
 
     // --- Events ---
@@ -968,16 +1098,16 @@ const handleDashboardLogic = async () => {
     document.getElementById("btn-next")?.addEventListener("click", () => handlePageChange(1));
     document.getElementById("btn-prev-mobile")?.addEventListener("click", () => handlePageChange(-1));
     document.getElementById("btn-next-mobile")?.addEventListener("click", () => handlePageChange(1));
-    
+
     // --- DETAILS MODAL Logic (Existing) ---
     const detailModal = document.getElementById("invoice-modal");
     const backdrop = document.getElementById("modal-backdrop-invoice");
     const closeBtn = document.getElementById("btn-close-invoice-modal");
-    
+
     // Status Buttons
     const btnVoid = document.getElementById("btn-status-void");
     const btnPaid = document.getElementById("btn-status-paid");
-    
+
     let currentInvoiceId = null;
 
     const closeModal = () => {
@@ -990,14 +1120,14 @@ const handleDashboardLogic = async () => {
     const openModal = async (btn) => {
         const id = btn.dataset.invoice_id;
         currentInvoiceId = id;
-        
+
         // Basic Info from dataset
         document.getElementById("modal-doc-type-title").innerText = btn.dataset.status === "COTIZACION" ? "COTIZACIÓN DIGITAL" : "FACTURA DIGITAL";
         document.getElementById("modal-control-no").innerText = `CONTROL: 00-${id.toString().padStart(5, '0')}`;
-        document.getElementById("modal-invoice-id-display").innerText = id.toString().padStart(4,'0');
+        document.getElementById("modal-invoice-id-display").innerText = id.toString().padStart(4, '0');
         document.getElementById("modal-client-name").innerText = btn.dataset.client;
         document.getElementById("modal-invoice-date-display").innerText = btn.dataset.date;
-        
+
         // Update Totals (from dataset)
         document.getElementById("modal-invoice-total").innerText = btn.dataset.total;
 
@@ -1009,28 +1139,35 @@ const handleDashboardLogic = async () => {
             const res = await fetch(`http://localhost:3000/api/invoice_details`);
             const allItems = await res.json();
             const items = allItems.filter(item => item.invoice_id == id);
-            
-            if(items.length === 0) {
-                 list.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-400">Sin detalles</td></tr>';
+
+            if (items.length === 0) {
+                list.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-400">Sin detalles</td></tr>';
             } else {
                 let subtotalValue = 0;
                 list.innerHTML = items?.map(item => {
-                    const rowTotal = item.quantity * item.unit_price;
+                    // Convertir a números para evitar errores con toFixed
+                    const quantity = Number(item.quantity);
+                    const unitPrice = parseFloat(item.unit_price);
+                    const rowTotal = quantity * unitPrice;
                     subtotalValue += rowTotal;
                     return `
                     <tr>
-                        <td class="py-2 pl-4 text-gray-800 border-b border-gray-50 text-center">${item.quantity}</td>
+                        <td class="py-2 pl-4 text-gray-800 border-b border-gray-50 text-center">${quantity}</td>
                         <td class="py-2 text-gray-600 border-b border-gray-50 text-center">-</td>
                         <td class="py-2 text-gray-800 border-b border-gray-50">${item.description}</td>
-                        <td class="py-2 text-right text-gray-600 border-b border-gray-50">$${item.unit_price.toFixed(2)}</td>
+                        <td class="py-2 text-right text-gray-600 border-b border-gray-50">$${unitPrice.toFixed(2)}</td>
                         <td class="py-2 text-right font-medium text-gray-800 border-b border-gray-50 pr-4">$${rowTotal.toFixed(2)}</td>
                     </tr>
                 `}).join('');
 
                 // Update stylized totals
+                const applyTax = btn.dataset.apply_tax === '1' || btn.dataset.apply_tax === 'true';
+                const taxAmount = applyTax ? subtotalValue * 0.16 : 0;
+                const totalAmount = subtotalValue + taxAmount;
+
                 document.getElementById("modal-subtotal").innerText = `$${subtotalValue.toFixed(2)}`;
-                document.getElementById("modal-tax").innerText = `$${(subtotalValue * 0.16).toFixed(2)}`;
-                document.getElementById("modal-invoice-total").innerText = `$${(subtotalValue * 1.16).toFixed(2)}`;
+                document.getElementById("modal-tax").innerText = `$${taxAmount.toFixed(2)}`;
+                document.getElementById("modal-invoice-total").innerText = `$${totalAmount.toFixed(2)}`;
             }
 
             detailModal.classList.remove("opacity-0", "pointer-events-none");
@@ -1045,8 +1182,8 @@ const handleDashboardLogic = async () => {
     };
 
     const updateStatus = async (newStatus) => {
-        if(!currentInvoiceId) return;
-        if(!confirm(`¿Cambiar estado a ${newStatus}?`)) return;
+        if (!currentInvoiceId) return;
+        if (!confirm(`¿Cambiar estado a ${newStatus}?`)) return;
 
         try {
             const res = await fetch(`http://localhost:3000/api/invoices/${currentInvoiceId}`, {
@@ -1055,7 +1192,7 @@ const handleDashboardLogic = async () => {
                 body: JSON.stringify({ invoice_status: newStatus })
             });
 
-            if(res.ok) {
+            if (res.ok) {
                 closeModal();
                 // Refresh Page to see changes
                 window.navigateTo("dashboard");
@@ -1080,9 +1217,9 @@ const handleDashboardLogic = async () => {
             const res = await fetch(`http://localhost:3000/api/invoice_details`);
             const allItems = await res.json();
             const items = allItems.filter(item => item.invoice_id == currentInvoiceId);
-            
+
             const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0);
-            
+
             const payload = {
                 invoice_id: currentInvoiceId,
                 invoice_date: btn.dataset.date,
@@ -1124,7 +1261,81 @@ const handleDashboardLogic = async () => {
         }
     };
 
-    document.querySelectorAll(".btn-view-invoice").forEach(btn => 
+    const handleExportPDFFromCrud = async () => {
+        if (!currentInvoiceId) return;
+
+        // Necesitamos recolectar los datos para el export
+        const btn = document.querySelector(`.btn-view-invoice[data-invoice_id="${currentInvoiceId}"]`);
+        if (!btn) return;
+
+        // Fetch de los items para tener la data completa
+        try {
+            const res = await fetch(`http://localhost:3000/api/invoice_details`);
+            const allItems = await res.json();
+            const items = allItems.filter(item => item.invoice_id == currentInvoiceId);
+
+            // Convertir a números para evitar errores de tipo
+            const subtotal = items.reduce((acc, item) => {
+                const quantity = Number(item.quantity);
+                const unitPrice = parseFloat(item.unit_price);
+                return acc + (quantity * unitPrice);
+            }, 0);
+
+            const applyTax = (btn.dataset.apply_tax === '1' || btn.dataset.apply_tax === 'true');
+            const taxAmount = applyTax ? subtotal * 0.16 : 0;
+
+            const payload = {
+                invoice_id: currentInvoiceId,
+                invoice_date: btn.dataset.date,
+                client_name: btn.dataset.client,
+                items: items,
+                subtotal: subtotal,
+                tax: taxAmount,
+                total_amount: subtotal + taxAmount,
+                apply_tax: applyTax
+            };
+
+            const btnExport = document.getElementById("btn-export-pdf-crud");
+            const originalText = btnExport.innerHTML;
+            btnExport.innerHTML = '<i class="ri-loader-4-line animate-spin"></i>...';
+            btnExport.disabled = true;
+
+            const response = await fetch("http://localhost:3000/api/export-pdf", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("Error al generar PDF");
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Factura_${btn.dataset.client.replace(/\s+/g, '_')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            btnExport.innerHTML = originalText;
+            btnExport.disabled = false;
+        } catch (error) {
+            console.error(error);
+            alert("Error al exportar PDF: " + error.message);
+
+            // Restaurar botón en caso de error
+            const btnExport = document.getElementById("btn-export-pdf-crud");
+            if (btnExport) {
+                btnExport.innerHTML = '<i class="ri-file-pdf-line"></i> Descargar PDF';
+                btnExport.disabled = false;
+            }
+        }
+    };
+
+
+
+    document.querySelectorAll(".btn-view-invoice").forEach(btn =>
         btn.addEventListener("click", () => openModal(btn))
     );
 
@@ -1133,6 +1344,11 @@ const handleDashboardLogic = async () => {
     btnVoid?.addEventListener("click", () => updateStatus("ANULADA"));
     btnPaid?.addEventListener("click", () => updateStatus("PAGADA"));
     document.getElementById("btn-export-excel-crud")?.addEventListener("click", handleExportFromCrud);
+    document.getElementById("btn-export-pdf-crud")?.addEventListener("click", handleExportPDFFromCrud);
+
+    // Event listeners para botones de crear factura
+    document.getElementById("desktop-create-btn")?.addEventListener("click", () => window.navigateTo("create", { mode: "invoice" }));
+    document.getElementById("mobile-create-btn")?.addEventListener("click", () => window.navigateTo("create", { mode: "invoice" }));
 };
 
 // --- 6. LÓGICA HOME ---
@@ -1150,33 +1366,158 @@ const handleProductsLogic = () => {
     document.getElementById("desktop-add-prod")?.addEventListener("click", open);
     document.getElementById("mobile-add-prod")?.addEventListener("click", open);
     document.getElementById("close-drawer-btn")?.addEventListener("click", close);
-    drawer?.addEventListener("click", (e) => { if(e.target === drawer) close(); });
+    drawer?.addEventListener("click", (e) => { if (e.target === drawer) close(); });
 };
 
-// --- 8. LÓGICA CONFIGURACIÓN ---
+// --- 7. LÓGICA CONFIGURACIÓN (CAMBIO DE CONTRASEÑA) ---
 const handleProfileLogic = () => {
-    const form = document.getElementById("config-form");
-    const saveBtn = document.getElementById("btn-save-config");
-    
-    form?.addEventListener("submit", (e) => {
+    const passwordForm = document.getElementById('password-form');
+    passwordForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        // Guardamos todo en localStorage como campos individuales para fácil acceso
-        localStorage.setItem("config_company_name", form.elements["company_name"].value);
-        localStorage.setItem("config_company_id", form.elements["company_id"].value);
-        localStorage.setItem("config_company_address", form.elements["company_address"].value);
-        localStorage.setItem("config_company_logo", form.elements["company_logo"].value);
 
-        // Feedback visual
-        const originalText = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<i class="ri-check-line"></i> Guardado';
-        saveBtn.classList.remove("bg-blue-600", "hover:bg-blue-700");
-        saveBtn.classList.add("bg-green-600", "hover:bg-green-700");
-        
-        setTimeout(() => {
-            saveBtn.innerHTML = originalText;
-            saveBtn.classList.add("bg-blue-600", "hover:bg-blue-700");
-            saveBtn.classList.remove("bg-green-600", "hover:bg-green-700");
-        }, 2000);
+        const formData = new FormData(passwordForm);
+        const currentPassword = formData.get('current_password');
+        const newPassword = formData.get('new_password');
+        const confirmPassword = formData.get('confirm_password');
+
+        // Validaciones
+        if (newPassword !== confirmPassword) {
+            alert('Las contraseñas no coinciden');
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            alert('La nueva contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+
+        const userId = localStorage.getItem('userId');
+        const payload = {
+            user_id: userId,
+            current_password: currentPassword,
+            new_password: newPassword
+        };
+
+        const btn = document.getElementById('btn-change-password');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Cambiando...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('http://localhost:2020/change_password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Error al cambiar contraseña');
+            }
+
+            btn.innerHTML = '<i class="ri-check-line"></i> ¡Contraseña Cambiada!';
+            btn.classList.remove('bg-[#6b5674]', 'hover:opacity-90');
+            btn.classList.add('bg-green-600');
+
+            passwordForm.reset();
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-green-600');
+                btn.classList.add('bg-[#6b5674]', 'hover:opacity-90');
+                btn.disabled = false;
+            }, 2000);
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+};
+
+// --- 8. LÓGICA USUARIOS (ADMIN) ---
+const handleUsersLogic = () => {
+    // Crear usuario
+    const createForm = document.getElementById('create-user-form');
+    createForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(createForm);
+        const payload = {
+            full_name: formData.get('username'),
+            password: formData.get('password'),
+            email: formData.get('email'),
+            user_type: formData.get('user_type')
+        };
+
+        const btn = document.getElementById('btn-create-user');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Creando...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('http://localhost:2020/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                btn.innerHTML = '<i class="ri-check-line"></i> ¡Usuario Creado!';
+                btn.classList.remove('bg-[#6b5674]', 'hover:opacity-90');
+                btn.classList.add('bg-green-600');
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('bg-green-600');
+                    btn.classList.add('bg-[#6b5674]', 'hover:opacity-90');
+                    btn.disabled = false;
+                    window.navigateTo('users'); // Recargar para ver nuevo usuario
+                }, 1500);
+            } else {
+                throw new Error(result.message || 'Error al crear usuario');
+            }
+        } catch (error) {
+            console.error(error);
+            btn.innerHTML = '<i class="ri-close-line"></i> Error';
+            btn.classList.remove('bg-[#6b5674]', 'hover:opacity-90');
+            btn.classList.add('bg-red-600');
+            alert(error.message || 'Error al crear usuario');
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-red-600');
+                btn.classList.add('bg-[#6b5674]', 'hover:opacity-90');
+                btn.disabled = false;
+            }, 2000);
+        }
+    });
+
+    // Eliminar usuario
+    document.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            if (!confirm('¿Eliminar este usuario?')) return;
+
+            try {
+                const response = await fetch(`http://localhost:2020/delete_user.php?id=${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    window.navigateTo('users'); // Recargar
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Error eliminando usuario:', error);
+                alert('Error al eliminar usuario');
+            }
+        });
     });
 };
 
@@ -1184,8 +1525,8 @@ const handleProfileLogic = () => {
 // --- INICIALIZACIÓN ---
 const token = localStorage.getItem("authToken");
 if (token) {
-  window.navigateTo("home");
+    window.navigateTo("home");
 } else {
-  app.innerHTML = routes.login();
-  setupListeners("login");
+    app.innerHTML = routes.login();
+    setupListeners("login");
 }

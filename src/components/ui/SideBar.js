@@ -1,12 +1,17 @@
 import './SideBar.css'
 
 export const Sidebar = (activeItem = 'home') => {
+    // Verificar tipo de usuario para mostrar opciones de admin
+    const userType = localStorage.getItem('userType');
+    const isAdmin = userType === 'admin';
+
     // Definición de los ítems del menú
     const menuItems = [
         { id: 'home', icon: 'ri-home-4-line', label: 'Inicio' },
         { id: 'dashboard', icon: 'ri-file-list-3-line', label: 'Facturas' },
         { id: 'clients', icon: 'ri-group-line', label: 'Clientes' },
         { id: 'config', icon: 'ri-settings-4-line', label: 'Configuración' },
+        ...(isAdmin ? [{ id: 'users', icon: 'ri-admin-line', label: 'Usuarios' }] : []),
     ]
 
 

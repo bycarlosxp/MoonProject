@@ -17,17 +17,16 @@ export const LoginLayout = () => {
   const loginButton = GenerateButton("Entrar", "submit", "primary")
   const mainLoader = MainLoader()
 
-  document.addEventListener('DOMContentLoaded', () =>
-    {
-      const loader = document.querySelector('#main-loader')
-  
+  document.addEventListener('DOMContentLoaded', () => {
+    const loader = document.querySelector('#main-loader')
+
     setTimeout(() => {
-        loader.classList.add('hidden-loader')
-        setTimeout(() => {
-          loader.style.display = 'none';
-        }, 2000)
-      }, 500)
-    }
+      loader.classList.add('hidden-loader')
+      setTimeout(() => {
+        loader.style.display = 'none';
+      }, 2000)
+    }, 500)
+  }
   )
   return `
     ${mainLoader}

@@ -12,7 +12,7 @@ export const HomeLayout = async () => { // <--- 1. Ahora es ASYNC
     let pendingCount = 0;
     let quotesCount = 0;
     let weeklyData = [0, 0, 0, 0]; // Semanas 1, 2, 3, 4
-    
+
     // Formateador de moneda
     const formatMoney = (amount) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -25,14 +25,14 @@ export const HomeLayout = async () => { // <--- 1. Ahora es ASYNC
 
         // Obtener mes actual
         const now = new Date();
-        const currentMonth = now.getMonth(); 
+        const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
         // --- 3. PROCESAMIENTO DE DATOS ---
         invoices.forEach(inv => {
             const amount = parseFloat(inv.total_amount);
             const invDate = new Date(inv.invoice_date);
-            
+
             // Filtros Globales (Acumulados Históricos o del Mes)
             // Aquí usaremos lógica del MES ACTUAL para que el dashboard sea relevante
             const isCurrentMonth = invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
@@ -71,13 +71,13 @@ export const HomeLayout = async () => { // <--- 1. Ahora es ASYNC
     // --- 4. GENERAR BARRAS DEL GRÁFICO ---
     // Encontrar el valor máximo para calcular porcentajes de altura CSS
     const maxVal = Math.max(...weeklyData, 1); // Evitar división por 0
-    
+
     const chartBarsHTML = weeklyData.map((val, index) => {
         const heightPercentage = Math.round((val / maxVal) * 100); // 0 a 100%
         // Si es la semana actual (aprox), le ponemos clase 'active'
         const currentWeekIndex = Math.floor((new Date().getDate() - 1) / 7);
         const isActive = index === currentWeekIndex ? 'active' : '';
-        
+
         return `
             <div class="bar-group" title="$${val}">
                 <div class="bar ${isActive}" style="height: ${heightPercentage}%"></div>
@@ -133,15 +133,6 @@ export const HomeLayout = async () => { // <--- 1. Ahora es ASYNC
                     <span class="fin-value">${quotesCount}</span>
                     <span class="fin-trend text-xs text-blue-500">
                         Generadas este mes
-                    </span>
-                </div>
-
-                <!-- Card 4 (Datos Ficticios por falta de tabla Gastos) -->
-                <div class="fin-card opacity-60 relative" title="Módulo no disponible">
-                    <span class="fin-label">Gastos Op.</span>
-                    <span class="fin-value" style="color:#c0392b">$0.00</span>
-                    <span class="fin-trend text-xs text-gray-400">
-                        No configurado
                     </span>
                 </div>
             </div>
