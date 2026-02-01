@@ -11,7 +11,9 @@ export const InvoiceLayout = async () => {
     let clientOptions = [{ value: "", label: "Cargando clientes..." }];
     try {
         const response = await fetch('http://localhost:3000/api/clients');
-        const clients = await response.json();
+        const allClients = await response.json();
+        // Filter inactive
+        const clients = allClients.filter(c => c.is_active !== 0);
         
         clientOptions = [
             { value: "", label: "Seleccionar Cliente..." },
@@ -26,14 +28,34 @@ export const InvoiceLayout = async () => {
     }
 
     // --- 2. Preparar Inputs ---
-    const clientSelect = GenerateSelect("ri-building-line", "client", clientOptions);
+    const clientSelectHTML = GenerateSelect("ri-building-line", "client", clientOptions);
+    
+    // Wrapper para el Select + Botón
+    const clientSection = `
+        <div class="flex gap-2 items-end">
+            <div class="flex-1">${clientSelectHTML}</div>
+            <button id="btn-quick-add-client" class="mb-[2px] h-[42px] px-3 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors" title="Nuevo Cliente Rápido">
+                <i class="ri-add-line font-bold"></i>
+            </button>
+        </div>
+    `;
     
     // Obtener fecha actual en formato YYYY-MM-DD para el input type="date"
     const today = new Date().toISOString().split('T')[0];
     
     // Generar inputs con 'today' como valor por defecto
 
-    const dateDue = GenerateInput("ri-calendar-event-line", "Vencimiento", "date", "date_due", today);
+    const dateDue = `
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Vencimiento</label>
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="ri-calendar-event-line text-gray-400"></i>
+            </div>
+            <input type="date" name="date_due" value="${today}" 
+                class="pl-10 block w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all">
+        </div>
+    </div>`;
 
     // --- 3. HTML del Modal de Previsualización ---
     const previewModal = `
@@ -58,68 +80,61 @@ export const InvoiceLayout = async () => {
                 <div class="bg-white shadow-2xl min-h-[800px] p-8 md:p-12 mx-auto max-w-2xl" id="invoice-paper">
                     
                     <!-- Encabezado del Documento -->
-                    <div class="flex justify-between items-start border-b border-gray-100 pb-8 mb-8">
+                    <div class="flex justify-between items-start border-b-2 border-gray-800 pb-8 mb-8">
                         <div>
-                            <div class="text-4xl font-extrabold text-gray-800 tracking-tight" id="paper-type">FACTURA</div>
-                            <div class="text-gray-400 font-mono text-sm mt-1"># BORRADOR</div>
+                            <div class="text-3xl font-black text-blue-800 tracking-tight" id="paper-type">SUMINISTROS DEPOMED</div>
+                            <div class="text-gray-500 font-medium text-xs mt-1">SUMINISTROS DEPOMED, C.A.</div>
+                            <div class="text-gray-400 text-[10px] leading-tight mt-1">
+                                RIF: J-50123456-7<br>
+                                Av. Principal de los Ruices, Caracas.<br>
+                                Telf: 0212-1234567
+                            </div>
                         </div>
                         
                         <div class="text-right">
-                             <!-- Caja de Fechas -->
-                             <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 mb-4 text-sm">
-                                <div class="flex justify-between gap-6 mb-1">
-                                    <span class="font-bold text-gray-400 uppercase tracking-wider text-xs">Emisión:</span>
-                                    <span class="font-semibold text-gray-800" id="paper-date">--/--/----</span>
-                                </div>
-                                <div class="flex justify-between gap-6">
-                                    <span class="font-bold text-gray-400 uppercase tracking-wider text-xs">Vence:</span>
-                                    <span class="font-semibold text-gray-800" id="paper-due">--/--/----</span>
-                                </div>
-                            </div>
-
-                            <!-- Total Grande Superior -->
-                            <div>
-                                <span class="text-xs text-gray-400 uppercase tracking-wider block">Monto Total</span>
-                                <div class="font-bold text-gray-800 text-3xl" id="paper-total-top">$0.00</div>
-                            </div>
+                             <div class="text-red-600 font-bold text-lg mb-1" id="paper-control-no">CONTROL: 00-00000</div>
+                             <div class="text-gray-800 font-bold text-sm">Factura # <span id="paper-invoice-id">BORRADOR</span></div>
+                             <div class="text-gray-500 text-xs mt-2" id="paper-date">-- de -- de ----</div>
                         </div>
                     </div>
 
                     <!-- Info Cliente -->
-                    <div class="mb-8 p-4 bg-blue-50/30 rounded-lg border border-blue-50">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Cliente:</h4>
-                        <div class="text-gray-800 font-medium text-xl" id="paper-client">Seleccione un cliente</div>
+                    <div class="mb-8 p-4 bg-gray-50 border-l-4 border-gray-800">
+                        <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">CLIENTE:</h4>
+                        <div class="text-gray-800 font-bold text-lg" id="paper-client">Seleccione un cliente</div>
                     </div>
 
                     <!-- Tabla de Items -->
-                    <table class="w-full mb-8">
-                        <thead>
-                            <tr class="text-left text-xs font-bold text-gray-500 uppercase border-b border-gray-200">
-                                <th class="py-3 pl-2">Descripción</th>
-                                <th class="py-3 text-right">Cant.</th>
-                                <th class="py-3 text-right">Precio</th>
-                                <th class="py-3 text-right pr-2">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="paper-items-body" class="text-sm text-gray-700 divide-y divide-gray-100"></tbody>
-                    </table>
+                    <div class="border border-gray-200 rounded-lg overflow-hidden mb-8">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-800 text-white text-[10px] font-bold uppercase">
+                                    <th class="py-3 pl-4 text-left">Cantidad</th>
+                                    <th class="py-3 text-left">Ref</th>
+                                    <th class="py-3 text-left">Descripción</th>
+                                    <th class="py-3 text-right">Precio Unit.</th>
+                                    <th class="py-3 text-right pr-4">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paper-items-body" class="text-sm text-gray-700 divide-y divide-gray-100 italic"></tbody>
+                        </table>
+                    </div>
 
                     <!-- Totales Inferiores -->
-                    <div class="flex justify-end border-t border-gray-200 pt-8">
-                        <div class="w-1/2 space-y-2">
-                            <div class="flex justify-between text-gray-600">
-                                <span>Subtotal</span>
+                    <div class="flex justify-end">
+                        <div class="w-1/2 space-y-1">
+                            <div class="flex justify-between text-gray-500 text-xs px-2">
+                                <span>Base Imponible Bs.</span>
                                 <span id="paper-subtotal">$0.00</span>
                             </div>
                             
-                            <!-- Fila de Impuestos (Se oculta si no aplica) -->
-                            <div class="flex justify-between text-gray-600" id="paper-tax-row" style="display:none">
-                                <span>Impuestos (16%)</span>
+                            <div class="flex justify-between text-gray-500 text-xs px-2">
+                                <span>I.V.A (16%)</span>
                                 <span id="paper-tax">$0.00</span>
                             </div>
                             
-                            <div class="flex justify-between text-xl font-bold text-gray-800 pt-4 border-t border-gray-100">
-                                <span>Total a Pagar</span>
+                            <div class="flex justify-between text-base font-black text-gray-800 pt-3 border-t-2 border-gray-800 mt-2 px-2 bg-gray-50">
+                                <span>TOTAL DOCUMENTO</span>
                                 <span id="paper-total-bottom">$0.00</span>
                             </div>
                         </div>
@@ -129,11 +144,34 @@ export const InvoiceLayout = async () => {
 
             <!-- Footer Botones -->
             <div class="bg-white p-4 border-t border-gray-200 flex justify-end gap-3 shrink-0">
+                <button id="btn-export-excel" class="px-6 py-2.5 rounded-lg bg-blue-50 text-blue-600 font-medium hover:bg-blue-100 transition-colors flex items-center gap-2">
+                    <i class="ri-file-excel-2-line"></i> Exportar Excel
+                </button>
                 <button id="btn-edit-mode" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors">Volver a Editar</button>
                 <button id="btn-confirm-invoice" class="px-6 py-2.5 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 shadow-lg shadow-green-500/20 transition-all flex items-center gap-2">
                     <i class="ri-check-double-line"></i> <span id="btn-text-confirm">Confirmar y Emitir</span>
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Cliente Rápido -->
+    <div id="quick-client-modal" class="fixed inset-0 z-1005 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" id="quick-client-backdrop"></div>
+        <div class="bg-white w-full max-w-md mx-4 rounded-xl shadow-2xl relative z-10 transform scale-95 transition-transform duration-300 p-6">
+            <h3 class="font-bold text-lg mb-4 text-gray-800">Nuevo Cliente Rápido</h3>
+            <form id="quick-client-form" class="space-y-4">
+                <div>
+                     <input type="text" name="quick_name" placeholder="Nombre / Razón Social" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100" required>
+                </div>
+                 <div>
+                     <input type="text" name="quick_id" placeholder="Documento ID (DNI/NIT)" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" id="btn-cancel-quick" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors">Guardar</button>
+                </div>
+            </form>
         </div>
     </div>
     `
@@ -171,7 +209,7 @@ export const InvoiceLayout = async () => {
                             <i class="ri-information-line"></i> Información General
                         </h2>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="md:col-span-1">${clientSelect}</div>
+                            <div class="md:col-span-1">${clientSection}</div>
                             <!-- Los inputs ya vienen con valor 'today' -->
                             <div class="md:col-span-1">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Emisión</label>

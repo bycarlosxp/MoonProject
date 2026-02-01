@@ -14,58 +14,6 @@ export const ClientsLayout = async () => {
     
     const createBtn = `<button id="btn-open-modal" class="custom-button-primary rounded-lg px-6 py-2.5 font-medium shadow-blue-500/20 shadow-lg hover:shadow-blue-500/40 transition-all active:scale-95 text-sm w-full md:w-auto flex items-center justify-center gap-2"><i class="ri-add-line"></i> Nuevo Cliente</button>`
     
-    let clients = []
-    
-    try {
-        const response = await fetch('http://localhost:3000/api/clients')
-        clients = await response.json()
-    } catch (e) {
-        console.error("Error fetching clients", e)
-    }
-
-    // MAPEO DE FILAS
-    const rows = clients?.map(c => {
-        const clientJson = JSON.stringify(c).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-        
-        return `
-        <div class="md:crud-row transition-all hover:bg-gray-50 border-b border-gray-100 last:border-0 flex flex-col md:grid md:grid-cols-12 gap-2 p-4 animate-slide-up">
-            <!-- Columna Cliente -->
-            <div class="md:col-span-5 flex items-center gap-3">
-                <div class="user-avatar w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0" style="background:#e8f4fd; color:#3498db;">
-                    ${c?.client_name?.charAt(0).toUpperCase() || 'U'}
-                </div>
-                <div class="flex flex-col overflow-hidden">
-                    <span class="client-name-text font-medium text-gray-800 truncate" title="${c?.client_name}">${c?.client_name}</span>
-                    <span class="text-xs text-gray-400 truncate">${c?.client_document_id || 'Sin ID'}</span>
-                </div>
-            </div>
-
-            <!-- Columna Info (Tel/Dir) - Oculta detalles en móvil muy pequeño si quieres -->
-            <div class="md:col-span-5 flex flex-col justify-center md:pl-4">
-                <div class="flex items-center text-sm text-gray-600 mb-1">
-                    <i class="ri-phone-line mr-2 text-gray-400"></i>
-                    <span class="client-phone-text">${c?.client_phone || '---'}</span>
-                </div>
-                <div class="flex items-center text-xs text-gray-500 truncate">
-                    <i class="ri-map-pin-line mr-2 text-gray-400"></i>
-                    <span class="truncate max-w-[200px]" title="${c?.client_address}">${c?.client_address || 'Sin dirección'}</span>
-                </div>
-            </div>
-
-            <!-- Columna Acciones -->
-            <div class="md:col-span-2 flex justify-end items-center gap-2 mt-2 md:mt-0 border-t md:border-t-0 border-gray-50 pt-2 md:pt-0">
-                <button class="btn-edit-client w-8 h-8 rounded-full hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors flex items-center justify-center" 
-                        data-client="${clientJson}">
-                    <i class="ri-pencil-line"></i>
-                </button>
-                <button class="w-8 h-8 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors flex items-center justify-center">
-                    <i class="ri-delete-bin-6-line"></i>
-                </button>
-            </div>
-        </div>
-        `
-    }).join('');
-
     // Modal HTML Structure
     const modalHTML = `
     <div id="client-modal" class="fixed inset-0 z-100 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
@@ -161,8 +109,40 @@ export const ClientsLayout = async () => {
 
             <!-- Tabla -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200/60 overflow-hidden min-h-[400px]">
-                <div class="table-wrapper" id="clients-table-body">
-                    ${rows.length > 0 ? rows : '<div class="flex flex-col items-center justify-center p-12 text-center text-gray-400"><i class="ri-user-unfollow-line text-4xl mb-2"></i><p>No hay clientes registrados</p></div>'}
+                <div id="clients-list" class="divide-y divide-gray-100">
+                     <div class="flex items-center justify-center p-12">
+                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                </div>
+
+                <!-- Pagination Controls -->
+                 <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <button id="btn-prev-mobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Anterior</button>
+                        <button id="btn-next-mobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Siguiente</button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Mostrando <span class="font-medium" id="page-start">0</span> a <span class="font-medium" id="page-end">0</span> de <span class="font-medium" id="total-items">0</span> clientes
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <button id="btn-prev" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Anterior</span>
+                                    <i class="ri-arrow-left-s-line text-lg"></i>
+                                </button>
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700" id="page-indicator">
+                                    Página 1
+                                </span>
+                                <button id="btn-next" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Siguiente</span>
+                                    <i class="ri-arrow-right-s-line text-lg"></i>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
